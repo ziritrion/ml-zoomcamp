@@ -15,13 +15,15 @@ COPY ["Pipfile", "Pipfile.lock", "./"]
 # (pipenv) We don't need a virtualenv in Docker, so we can install dependencies to the system
 RUN pipenv install --system --deploy
 
-# Copy the model
-COPY ["q4.py", "model1.bin", "./"]
+# Copy the files we need
+# WARNING! The base image already contains a model and a vectorizer!
+# We only need the script!
+COPY ["q5.py", "./"]
 
 # Expose a port on the container
 # Remember to map the port to a port in the host when running the container!
 EXPOSE 9696
 
 # Specify entrypoint
-ENTRYPOINT ["gunicorn", "--bind=0.0.0.0:9696", "q4:app"]
+ENTRYPOINT ["gunicorn", "--bind=0.0.0.0:9696", "q5:app"]
 

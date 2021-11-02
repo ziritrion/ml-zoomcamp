@@ -110,6 +110,8 @@ Additional requirement files are provided for local virtual environment set up a
 * `requirements-all.txt`: requirements file for running everything in this folder.
 * `environment.yml`: environment file for creating a new Conda virtual environment with the packages listed in `requirements.txt`.
 * `environment-all.yml`: environment file for creating a new Conda virtual environment with the packages listed in `requirements-all.txt`.
+* `Dockerfile`: a dockerfile for containerizing the Flask app.
+* `Dockerfile-old`: a second dockerfile provided for convenience.
 * `scratch.ipynb`: a simple scratch notebook with code for testing. Useful to send requests to `predict.py`.
 
 # Run the code
@@ -147,3 +149,22 @@ Please follow these steps to run the code.
 1. Use `scratch.ipynb` for testing `predict.py`. You may need to change the `url` variable to make it work locally; check the output of `python predict.py` to know your local IP address.
 1. After you're done, you may deactivate your virtual environment with:
     * `conda deactivate`.
+
+# Docker
+
+A Dockerfile is provided for building a Docker image for deployment of the Flask app. Because Conda has such a huge overhead, a multi-stage build is used to reduce the final image size. A second Dockerfile is provided as well in case the multi-stage build causes any problems.
+
+Please follow these steps to build and run the containerized `predict.py` app.
+
+1. [Install Docker](https://docs.docker.com/get-docker/).
+2. Build the image. You may change the name `matchdeploy` to anything else, but don't remove the period at the end.
+    * `docker build -f Dockerfile -t matchdeploy .`
+3. Once the image is built, run a container with mapped ports 9696:9696 (or change the external port to anything you may prefer)
+    * `docker run -it --rm -p 9696:9696 matchdeploy:latest`
+4. You may stop the container by typing `CTRL + C` on your keyboard.
+
+A second dockerfile, `Dockerfile-old`, is provided for building an image in a regular single-stage build. The resulting image will be over 1GB in size, so this method is not recommended unless absolutely necessary.
+
+# Acknowledgments
+
+[Multi-stage Docker Builds](https://pythonspeed.com/articles/conda-docker-image-size/)

@@ -87,7 +87,15 @@ The Quarterly Journal of Economics, Volume 121, Issue 2, 1 May 2006, Pages 673â€
 
 For this midterm project, a binary classification model was trained on the Speed Dating dataset in order to predict the `match` feature.
 
-3 models were trained: a Decision Tree, a Random Forest and a Gradient Boosting model. Out of the 3, Gradient Boosting was the model with the better performance (using the XGBoost library). A trained 
+3 models were trained: a Decision Tree, a Random Forest and a Gradient Boosting model. Out of the 3, Gradient Boosting was the model with the better performance (using the XGBoost library). A pretrained model is provided in the file `model.bin`, which can be loaded with `pickle`.
+
+The exploratory data analysis and model selection was done with the help of a Jupyter Notebook, `notebook.ipynb`.
+
+The model training script was exported to `train.py`.
+
+A Flask app was created in `predict.py`, which can be deployed with any WSGI server. This project has been developed and tested with Gunicorn, but any other WSGI server should work as well.
+
+Additional requirement files are provided for local virtual environment set up and deployment.
 
 # Files
 
@@ -98,6 +106,10 @@ For this midterm project, a binary classification model was trained on the Speed
 * `predict.py`: Flask app that receives a query and outputs a prediction.
 * `model.py`: pre-trained gradient boosting model.
 * `dv.bin`: a pre-made DictVectorizer object, necessary for creating the data structures needed for prediction.
+* `requirements.txt`: requirements file for `predict.py` deployment.
+* `requirements-all.txt`: requirements file for running everything in this folder.
+* `environment.yml`: environment file for creating a new Conda virtual environment with the packages listed in `requirements.txt`.
+* `environment-all.yml`: environment file for creating a new Conda virtual environment with the packages listed in `requirements-all.txt`.
 * `scratch.ipynb`: a simple scratch notebook with code for testing. Useful to send requests to `predict.py`.
 
 # Run the code
@@ -106,22 +118,32 @@ Conda is used for package dependency and virtual environment management. The cod
 
 Please follow these steps to run the code.
 
-1. Instal Conda on your platform. Follow [these steps](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#) if you haven't installed it before.
-2. Create a new virtual environment with Python 3.8. The example code will use the name `match` for the virtual environment.
-    * `conda create --name match python=3.8`
-3. Activate the environment.
-    * `conda activate match`
-4. Install the dependencies. 2 dependency files are provided: `requirements-all.txt` contains all the needed requirements to run all of the code locally, and `requirement.txt` contains only the dependencies needed to run and deploy `predict.py` on Docker or any virtual environment.
-    * Install all the requirements.
-        * `conda install --file requirements-all.txt -c conda-forge`
-    * Install only the necessary requirements for deployment.
-        * `conda install --file requirements.txt -c conda-forge`
-5. Run `predict.py` either by itself (for testing) or with a WSGI server for deployment. The code and these instructions asume that Gunicorn will be used for deployment.
+1. Instal Conda on your platform. Follow [these steps](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#) if you have not installed it before.
+1. Create a new Conda virtual environment. 2 methods are provided for 2 different environments:
+    1. Method 1: using YML files. The virtual environment names are defined by these files (make sure they don't conflict with existing virtual environment names).
+        * Create a new `match` virtual environment with all the necessary dependencies to run all the code contained here.
+            * `conda env create -f environment-all.yml`
+        * Create a new `matchdeploy` virtual environment with only the necessary dependencies for `predict.py`.
+            * `conda env create -f environment.yml`
+        * Activate your environment before going to the next step (choose one of the following two).
+            * `conda actiave match`
+            * `conda activate matchdeploy`
+    1. Method 2: using the requirement TXT files. This method allows for custom environment names.
+        1. Create a new virtual environment with Python 3.8. The example code will use the name `match` for the virtual environment; feel free to replace it with any other name.
+            * `conda create --name match python=3.8`
+        1. Activate the environment.
+            * `conda activate match`
+        1. Install the dependencies. 2 dependency files are provided: `requirements-all.txt` contains all the needed requirements to run all of the code locally, and `requirement.txt` contains only the dependencies needed to run and deploy `predict.py` on Docker or any virtual environment.
+            * Install all the requirements.
+                * `conda install --file requirements-all.txt -c conda-forge`
+            * Install only the necessary requirements for deployment.
+                * `conda install --file requirements.txt -c conda-forge`
+1. Run `predict.py` either by itself (for testing) or with a WSGI server for deployment. The code and these instructions asume that Gunicorn will be used for deployment.
     * Run the code for quick testing:
         * `python predict.py`
     * Run the code on a WSGI server (Gunicorn):
         * `gunicorn --bind 0.0.0.0:9696 predict:app`
     * Stop running either of these by typing `CTRL + C` on your keyboard.
-6. Use `scratch.ipynb` for testing `predict.py`. You may need to change the `url` variable to make it work locally; check the output of `python predict.py` to know your local IP address.
-7. After you're done, you may deactivate your virtual environment with:
+1. Use `scratch.ipynb` for testing `predict.py`. You may need to change the `url` variable to make it work locally; check the output of `python predict.py` to know your local IP address.
+1. After you're done, you may deactivate your virtual environment with:
     * `conda deactivate`.

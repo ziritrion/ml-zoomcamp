@@ -111,7 +111,7 @@ Additional requirement files are provided for local virtual environment set up a
 * `environment.yml`: environment file for creating a new Conda virtual environment with the packages listed in `requirements.txt`.
 * `environment-all.yml`: environment file for creating a new Conda virtual environment with the packages listed in `requirements-all.txt`.
 * `Dockerfile`: a dockerfile for containerizing the Flask app.
-* `Dockerfile-old`: a second dockerfile provided for convenience.
+* `Dockerfile-lean`: a second dockerfile provided for convenience.
 * `scratch.ipynb`: a simple scratch notebook with code for testing. Useful to send requests to `predict.py`.
 
 # Run the code
@@ -152,7 +152,7 @@ Please follow these steps to run the code.
 
 # Docker
 
-A Dockerfile is provided for building a Docker image for deployment of the Flask app. Because Conda has such a huge overhead, a multi-stage build is used to reduce the final image size. A second Dockerfile is provided as well in case the multi-stage build causes any problems.
+A Dockerfile is provided for building a Docker image for deployment of the Flask app. Because Conda has such a huge overhead, a multi-stage build is used to reduce the final image size. However, AWS Elastic Beanstalk can't handle multi-stage builds and due to time constraints I do not have the time to fix this issue before the project deadline, so 2 different dockerfiles are provided: `Dockerfile` and `Dockerfile-lean`.
 
 Please follow these steps to build and run the containerized `predict.py` app.
 
@@ -163,7 +163,46 @@ Please follow these steps to build and run the containerized `predict.py` app.
     * `docker run -it --rm -p 9696:9696 matchdeploy:latest`
 4. You may stop the container by typing `CTRL + C` on your keyboard.
 
-A second dockerfile, `Dockerfile-old`, is provided for building an image in a regular single-stage build. The resulting image will be over 1GB in size, so this method is not recommended unless absolutely necessary.
+If you do not plan on deploying to AWS EB, feel free to use `Dockerfile-lean` in all of the previous commands. The final image with `Dockerfile`will be around 1.31GB in size, but with `Dockerfile-lean` the final image will be 464MB.
+
+# AWS Elastic Beanstalk Deployment
+
+As mentioned in the previous section, AWS EB does not support multi-staged Docker builds. However, due to the large size of the Docker image generated with the default `Dockerfile`, the default t2.micro EC2 instances are unable to run the instances due to a lack of memory.
+
+Please follow these steps to create a new app and environment in AWS EB with large enough instances.
+
+1. Create a new AWS EB application. You can do so from the AWS EB web panel.
+![Setup](cloud/setup1.png)
+1. Select you application and create a new environment.
+![Setup](cloud/setup2.png)
+1. Choose Web server environment.
+![Setup](cloud/setup3.png)
+1. Choose the following settings:
+    * Environment name: any of your choosing.
+    * Platform:
+        * Managed platform
+        * Docker
+        * Docker running on 64bit Amazon Linux 2
+        * 3.4.8 (Recommended)
+    * Application code
+        * Upload your code
+        * Source origin
+            * Local file (zip this folder and upload it)
+![Setup](cloud/setup4.png)
+1. Click on Configure More options.
+    * Edit the Capacity field
+![Setup](cloud/setup5.png)
+1. On Instance types, remove t2.micro and t2.small and choose t2.large and c5.large. Feel free to experiment with other instances, as these may be costly to run in the long term.
+![Setup](cloud/setup6.png)
+1. Click on the Save changes button at the bottom and then click on Create environment. It will take a few minutes.
+1. Once the environment has been deployed, you should be able to see the app's url on the environment page. If you moved elsewhere, you can access it from the sidebar: Environments > click on your environment.
+
+Here are some screenshots proving that the app can be successfully deployed. Due to the high cost of the instances, it's likely that anyone reading this won't be able to access these instances anymore. Feel free to run your on and use the code available on `scratch.ipynb` to test your instance.
+
+![Setup](cloud/01.png)
+![Setup](cloud/02.png)
+![Setup](cloud/03.png)
+![Setup](cloud/04.png)
 
 # Acknowledgments
 

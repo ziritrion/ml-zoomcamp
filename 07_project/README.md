@@ -1,4 +1,4 @@
-This folder contains all the required code for the midterm project of Alexey Grigorev's ML Zoomcamp.
+This folder contains all the required code for the [midterm project of Alexey Grigorev's ML Zoomcamp](https://github.com/alexeygrigorev/mlbookcamp-code/tree/master/course-zoomcamp/07-midterm-project).
 
 # Dataset Description
 
@@ -128,7 +128,7 @@ Please follow these steps to run the code.
         * Create a new `matchdeploy` virtual environment with only the necessary dependencies for `predict.py`.
             * `conda env create -f environment.yml`
         * Activate your environment before going to the next step (choose one of the following two).
-            * `conda actiave match`
+            * `conda activate match`
             * `conda activate matchdeploy`
     1. Method 2: using the requirement TXT files. This method allows for custom environment names.
         1. Create a new virtual environment with Python 3.8. The example code will use the name `match` for the virtual environment; feel free to replace it with any other name.
@@ -187,22 +187,22 @@ Please follow these steps to create a new app and environment in AWS EB with lar
     * Application code
         * Upload your code
         * Source origin
-            * Local file (zip this folder and upload it)
+            * Local file (zip the contents of this folder and upload it)
 ![Setup](cloud/setup4.png)
 1. Click on Configure More options.
     * Edit the Capacity field
 ![Setup](cloud/setup5.png)
-1. On Instance types, remove t2.micro and t2.small and choose t2.large and c5.large. Feel free to experiment with other instances, as these may be costly to run in the long term.
+1. On Instance types, remove t2.micro and t2.small and choose t2.large and c5.large. Feel free to experiment with other instances, as these may be expensive to run in the long term.
 ![Setup](cloud/setup6.png)
 1. Click on the Save changes button at the bottom and then click on Create environment. It will take a few minutes.
-1. Once the environment has been deployed, you should be able to see the app's url on the environment page. If you moved elsewhere, you can access it from the sidebar: Environments > click on your environment.
+1. Once the environment has been deployed, you should be able to see the app's url on the environment page. If you browsed elsewhere, you can access it from the sidebar: Environments > click on your environment.
 
-Here are some screenshots proving that the app can be successfully deployed. Due to the high cost of the instances, it's likely that anyone reading this won't be able to access these instances anymore. Feel free to run your on and use the code available on `scratch.ipynb` to test your instance.
+Here are some screenshots proving that the app can be successfully deployed. Due to the high cost of the instances, it's likely that anyone reading this won't be able to access these instances anymore. Feel free to run your own and use the code available on `scratch.ipynb` to test your instance.
 
-![Setup](cloud/01.png)
-![Setup](cloud/02.png)
-![Setup](cloud/03.png)
-![Setup](cloud/04.png)
+![Running instance](cloud/01.png)
+![Running instance](cloud/02.png)
+![Running instance](cloud/03.png)
+![Running instance](cloud/04.png)
 
 # Acknowledgments
 

@@ -25,7 +25,8 @@ If the data is time-sensitive or related with time in any fashion, splitting and
 
 In these cases, the split is done without shuffling. The 60% split for train will contain the oldest data, the 20% validation split will contain more recent data and the 20% test split will contain the latest data.
 
-# Working with text
+# Advanced uses for Vectorizers
+## Working with text
 
 If a feature consists of text (for example, appartment descriptions, reviews, etc), one way of dealing with them is by codifying the text to vectors.
 
@@ -42,7 +43,7 @@ Scikit also offers other similar tools:
 
 * `TfidVectorizer`: similar to `CountVectorizer` but uses [tf-idf](https://www.wikiwand.com/en/Tf%E2%80%93idf) to assign weights between 0 and 1 to each position in the vector, thus giving more importance to some words than others.
 
-# Using `CountVectorizer` with categorical features to reduce feature size
+## Using `CountVectorizer` with categorical features to reduce feature size
 
 If you have a categorical feature with many different values, thus resulting in a feature matrix too large to handle, you can use `CountVectorizer` for processing these features and reduce size. This is useful in instances where a categorical feature has too many categories, but many of these categories have very low counts (_long tail distribution_), which could lead to worse model performance.
 
@@ -71,7 +72,7 @@ Instead, we can follow these steps to get rid of some categories and make a more
 1. `X = cv_features.transform(my_features)`
     * This will convert your string to vectors, as shown in the [Working with text section](#working-with-text).
 
-# Joining processed text and categorical features
+## Joining processed text and categorical features
 
 After using `CountVectorizer`, it's likely that you'll want to rejoin the features together, especially if you've transformed text features on one hand and categorical features on the other.
 

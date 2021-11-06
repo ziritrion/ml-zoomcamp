@@ -63,7 +63,7 @@ Assuming you already installed Homebrew:
 1. Enter your instance's terminal with this command:
     * `multipass shell test`
     * You should see something like this.
-![Ubuntu bash](05_d02.png)
+![Ubuntu bash](images/05_d02.png)
 1. Exit the Ubuntu VM's terminal with this command:
     * `exit`
     * This will log you out of the Ubuntu terminal.
@@ -151,11 +151,11 @@ This will install Docker Desktop, which is a convenient way to handle Docker ima
 
 Open Docker by searching por it on Spotlight or Launchpad. The Docker main window should appear, like this:
 
-![Docker Desktop](05_d03.png)
+![Docker Desktop](images/05_d03.png)
 
 You can now close this windows with the red button on the top left. Docker will still run in the background; you should see the Docker icon on the top bar.
 
-![Docker Desktop icon](05_d04.png)
+![Docker Desktop icon](images/05_d04.png)
 
 As long as the drop down menu says that Docker Desktop is running, we should be good to go.
 

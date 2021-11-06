@@ -8,7 +8,7 @@ For production environments, we need to ***extract*** the model in a way that ca
 
 Using the _Churn_ exercise from weeks 2 and 3, a production environment for our Churn model could be the following:
 
-![Production example](/notes/05_d01.png)
+![Production example](images/05_d01.png)
 
 * `model.bin` file, containing the model extracted from the notebook.
 * `Churn service` which exposes the model and allows other components to access it and make predictions.

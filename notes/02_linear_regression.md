@@ -11,67 +11,67 @@ For our Linear Regression example, `g` will be Linear Regression model, our `y` 
 
 ## Simplified model (one single observation)
 
-* `g(Xi) ≈ yi`
-* `Xi` = a car
-* `yi` = price of the car
-* `Xi = (xi1, xi2, ..., xin)`
-* Each `xij` is a characteristic (feature) of the car.
+* `g(Xᵢ) ≈ yᵢ`
+* `Xᵢ` = a car
+* `yᵢ` = price of the car
+* `Xᵢ = (xᵢ₁, xᵢ₂, ..., xᵢₙ)`
+* Each `xᵢⱼ` is a characteristic (feature) of the car.
 
 Thus
 
-* `g(xi1, xi2, ..., xin) ≈ yi`
+* `g(xᵢ₁, xᵢ₂, ..., xᵢₙ) ≈ yᵢ`
 
 For our example, we'll pick 3 features: horse power, milles per gallon and popularity.
 
-* `Xi = [453, 11, 86]`
+* `Xᵢ = [453, 11, 86]`
 
 Here is the formula for our Linear Regression.
 
-* `g(Xi) = w0 + w1·xi1 + w2·xi2 + w3·xi3`
-* `w0` is the ***bias term*** weight.
-* All other `wj` are weights for each of the features.
+* `g(Xᵢ) = w₀ + w₁·xᵢ₁ + w₂·xᵢ₂ + w₃·xᵢ₃`
+* `w₀` is the ***bias term*** weight.
+* All other `wⱼ` are weights for each of the features.
 
 Alternatively:
 
-* `g(Xi) = w0 + sum( wj·xij, j=[1,3] )`
+* `g(Xᵢ) = w₀ + ∑( wⱼ·xᵢⱼ, j=[1,3] )`
 
-Depending on the values of the weights, our predicted price `yi` will be different.
+Depending on the values of the weights, our predicted price `yᵢ` will be different.
 
 ## Linear Regression in vector form
 
 Linear Regression formula for `n` features:
 
-*  `g(Xi) = w0 + sum( wj·xij, j=[1,n] )`
+*  `g(Xᵢ) = w₀ + ∑( wⱼ·xᵢⱼ, j=[1,n] )`
 
-The `sum( wj·xij, j=[1,n] )` term is actually a ***dot product***. Thus:
+The `∑( wⱼ·xᵢⱼ, j=[1,n] )` term is actually a ***dot product***. Thus:
 
-* `g(Xi) = w0 + Xi^T·W`
-* `Xi^T` is the transposed feature vector.
+* `g(Xᵢ) = w₀ + Xᵢᵀ · W`
+* `Xᵢᵀ` is the transposed feature vector.
 * `W` is the weights vector.
 
 We can make this formula even shorter by incorporate the bias term `w0` to our dot product, "simulating" a new feature `xi0` which is always equal to one.
 
-* `W = [w0, w1, w2, ... , wn]`
-* `Xi = [1, xi1, xi2, ... , xin]`
-* `W^T · Xi = Xi^T · W`
+* `W = [w₀, w₁, w₂, ... , wₙ]`
+* `Xᵢ = [1, xᵢ₁, xᵢ₂, ... , xᵢₙ]`
+* `Wᵀ · Xᵢ = Xᵢᵀ · W`
 
 We have now converted the complete Linear Regression formula into a dot product of vectors.
 
-Generalizing for multiple observations, `X` now becomes a matrix of size `m * n` where `n` is the number of features just like before, and `m` is the number of observations. Each row of `X` is an observation, identical in form to our previous `Xi`.
+Generalizing for multiple observations, `X` now becomes a matrix of size `m * n` where `n` is the number of features just like before, and `m` is the number of observations. Each row of `X` is an observation, identical in form to our previous `Xᵢ`.
 
-        1   x11   x12   ...   x1n
-        1   x21   x22   ...   x2n
+        1   x₁₁   x₁₂   ...   x₁ₙ
+        1   x₂₁   x₂₂   ...   x₂ₙ
         ... ...   ...   ...   ...
-        1   xm1   xm2   ...   xmn 
+        1   xₘ₁   xₘ₂   ...   xₘₙ 
 
 We can now multiply `X` with `W` to get our predictions.
 
-        1   x11   x12   ...   x1n       w0        X1^T·W
-        1   x21   x22   ...   x2n   ·   w1    =   X2^T·W 
+        1   x₁₁   x₁₂   ...   x₁ₙ       w₀        X₁ᵀ·W
+        1   x₂₁   x₂₂   ...   x₂ₙ   ·   w₁    =   X₂ᵀ·W 
         ... ...   ...   ...   ...       ...       ...
-        1   xm1   xm2   ...   xmn       wn        Xm^T·W
+        1   xₘ₁   xₘ₂   ...   xₘₙ       wₙ        Xₘᵀ·W
 
-The resulting vector `Yp` is the prediction vector.
+The resulting vector `Ŷ` is the prediction vector.
 
 But how do we calculate the weights?
 
@@ -81,33 +81,33 @@ But how do we calculate the weights?
 
 We want to solve for `W`. We invert `X` and use it to solve the equation:
 
-* `X^-1 · X · W = X^-1 · y`
-* `X^-1 · X = I`
+* `X⁻¹ · X · W = X⁻¹ · y`
+* `X⁻¹ · X = I`
 
 Thus:
-* `I · W = X^-1 · y` -> `I` is the Identity Matrix and does not change `W`.
-* `W = X^-1 · y`
+* `I · W = X⁻¹ · y` -> `I` is the Identity Matrix and does not change `W`.
+* `W = X⁻¹ · y`
 
-However, `X` may not be a square matrix and there is no guarantee that `X^-1` will exist at all. However, there is a workaround using transposed matrices:
+However, `X` may not be a square matrix and there is no guarantee that `X⁻¹` will exist at all. However, there is a workaround using transposed matrices:
 
-* `X^T · X` -> Gram matrix. A Gram matrix is ALWAYS square because it's of size `(n+1) * (n+1)`. Thus, it can be inverted.
+* `Xᵀ · X` -> Gram matrix. A Gram matrix is ALWAYS square because it's of size `(n+1) * (n+1)`. Thus, it can be inverted.
 
 We can now calculate the inverse of the Gram matrix and use it to solve our equation:
 
-* Starting from `X^T · X · W = X^T · y`, we use the inverse of the Gram matrix to cancel out the terms.
-* `(X^T · X)^-1 · X^T · X · W = (X^T · X)^-1 · X^T · y`
+* Starting from `Xᵀ · X · W = Xᵀ · y`, we use the inverse of the Gram matrix to cancel out the terms.
+* `(Xᵀ · X)⁻¹ · Xᵀ · X · W = (Xᵀ · X)⁻¹ · Xᵀ· y`
 
-Thus, knowing that `(X^T · X)^-1 · X^T · X = I` and can therefore be cancelled out, we finally get the closest solution possible for `W`:
+Thus, knowing that `(Xᵀ · X)⁻¹ · Xᵀ  · X = I` and can therefore be cancelled out, we finally get the closest solution possible for `W`:
 
-* `W = (X^T · X)^-1 · X^T · y`
+* `W = (Xᵀ  · X)⁻¹ · Xᵀ  · y`
 
 ## RMSE (Root Mean Square Error)
 
 MSRE is a convenient way to measure the accuracy (or the error) of our model.
 
-* `RMSE = sqrt( 1/m * sum( (g(Xi) - yi)^2 , i=[1,m] ) )`
-* `g(Xi)` is the prediction for `Xi`.
-* `yi` is the actual value.
+* `RMSE = √( 1/m * ∑( (g(Xᵢ) - yᵢ)²	 , i=[1,m] ) )`
+* `g(Xᵢ)` is the prediction for `Xᵢ`.
+* `yᵢ` is the actual value.
 
 The lower the RMSE, the more accurate the model is.
 
@@ -126,7 +126,7 @@ In pandas, we simply add a new feature to the DataFrame for each category elemen
 
 ## Regularization
 
-Sometimes there are features which are _linear combinations_ of other features (sum/product of other columns). This can lead to columns in the `X` matrix which are identical. The consequence of this is that the Gram matrix `X^T · X` becomes a _singular matrix_ and thus cannot be inverted.
+Sometimes there are features which are _linear combinations_ of other features (sum/product of other columns). This can lead to columns in the `X` matrix which are identical. The consequence of this is that the Gram matrix `Xᵀ · X` becomes a _singular matrix_ and thus cannot be inverted.
 
 In the case of noisy data which can lead to almost-but-not-quite identical features, the Gram matrix is invertable but the resulting values within are disproportionally big. This distorts the training and leads to huge errors.
 

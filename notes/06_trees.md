@@ -2,7 +2,7 @@
 
 A ***decision tree*** is a flowchart-like structure in which each internal node is a test on an attribute (such as flipping a coin and getting heads or tails), each branch is the outcomes of such test and each leaf/final node represents a class label (a _decision_ after computing all attributes).
 
-![Decision tree example](06_d01.png)
+![Decision tree example](images/06_d01.png)
 
 A tree with just one level is called a _stump_.
 
@@ -12,7 +12,7 @@ Deep decision trees are prone to ***overfitting***: they memorize their training
 
 Using a simple stump as an example we can see how a decision tree is created.
 
-![Decision tree algorithm](06_d02.png)
+![Decision tree algorithm](images/06_d02.png)
 
 Starting with a simple dataset:
 
@@ -74,7 +74,7 @@ We can now calculate the impurity for all thresholds:
 
 Thus, the best threshold for this example would be `3000`, with an impurity of 10%. Our decision tree will then look like this:
 
-![Example stump](06_d03.png)
+![Example stump](images/06_d03.png)
 
 If we had additional features, we could also create a decision table for that feature with all the thresholds and impurities. The lower the impurity, the more useful that feature with that particular threshold is.
 
@@ -126,13 +126,13 @@ There are actually many more hyperparameters, but these 2 would be the most impo
 
 This is the overall workflow of a decision tree model:
 
-![Decision tree workflow](06_d04.png)
+![Decision tree workflow](images/06_d04.png)
 
 The model is a single decision tree. We trust that it has been trained with the correct features and thresholds in order to calculate the correct probability.
 
 In contrast, a ***random forest model*** consists of a collection of different trees which have been trained on different feature subsets. Each tree outputs a prediction and the final prediction is the average of all of them.
 
-![Random forest](06_d05.png)
+![Random forest](images/06_d05.png)
 
 The feature subsets are chosen at random for each tree. On average, Random Forests show better accuracy than single decision trees.
 
@@ -151,7 +151,7 @@ A Random Forest contains multiple trees, but each tree has been randomly generat
 
 ***Gradient Boosting*** is the technique by which a single model is improved upon by measuring its ***error*** and modifying the model in order to reduce the error.
 
-![Gradient boosting](06_d06.png)
+![Gradient boosting](images/06_d06.png)
 
 If our model consists of a single tree, then we get ***Gradient Boosted Trees***.
 

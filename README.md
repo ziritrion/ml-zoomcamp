@@ -8,4 +8,4 @@ Go check out [DataTalks](https://datatalks.club/)!
 ## Links
 
 * Check out my notes for the course [here](notes/).
-* [Midterm project](07-midterm-project/).
+* [Midterm project](07_project/).

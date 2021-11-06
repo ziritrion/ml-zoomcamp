@@ -2,6 +2,7 @@
 
 Here are the notes I took from the course's videos.
 
+* [Week 1: Introduction to Machine Learning](01_intro.md)
 * [Week 2: Linear Regression](02_linear_regression.md)
 * [Week 3: Binary Classification (Logistic Regression)](03_classification.md)
 * [Week 4: Evaluation Metrics for Classification Models](04_classification_eval_metrics.md)

@@ -2,14 +2,15 @@
 
 Here are the notes I took from the course's videos.
 
-* [Week 1: Introduction to Machine Learning](01_intro.md)
-* [Week 2: Linear Regression](02_linear_regression.md)
-* [Week 3: Binary Classification (Logistic Regression)](03_classification.md)
-* [Week 4: Evaluation Metrics for Classification Models](04_classification_eval_metrics.md)
-* [Week 5: Deploying Machine Learning Models](05a_deployment.md)
+* [Session 1: Introduction to Machine Learning](01_intro.md)
+* [Session 2: Linear Regression](02_linear_regression.md)
+* [Session 3: Binary Classification (Logistic Regression)](03_classification.md)
+* [Session 4: Evaluation Metrics for Classification Models](04_classification_eval_metrics.md)
+* [Session 5: Deploying Machine Learning Models](05a_deployment.md)
     * [Extra: virtual environments in Intel Macs](05b_virtenvs.md)
-* [Week 6: Decision Trees](06_trees.md)
-* [Week 7: Miscellaneous](07_misc.md)
+* [Session 6: Decision Trees](06_trees.md)
+* [Session 7: Miscellaneous](07_misc.md)
+* [Session 8: Deep Learning](08_deep_learning.md)
 
 Additionally, the following gists with cheatsheets are available.
 

@@ -199,7 +199,7 @@ There are also many loss functions. We will use `CategoricalCrossentropy` becaus
 
     loss = keras.losses.CategoricalCrossentropy(from_logits=True)
 
-    model.compile(optimizer=optimizer, loss=loss, metrics=['caccuracy'])
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     model.fit(train_ds, epochs=10, validation_data=val_ds)
 
@@ -212,3 +212,130 @@ There are also many loss functions. We will use `CategoricalCrossentropy` becaus
     * `epochs` is the number of times that the algorithm will go through the data in order to train the model.
 
 # Adjusting the Learning Rate
+
+The **learning rate** of the optimizer defines how fast the network trains by establishing how much we should change the weights of the network.
+* High learning rate:
+    * ✅ Fast training.
+    * ❌ Easily overfit.
+    * ❌ Risk of not converging at all!
+* Small learning rate:
+    * ✅ Can be very precise
+    * ❌ Slow training
+    * ❌ Usually underfits, can get stuck in local minima of the error function.
+
+Finding an intermediate value that balances fast enough training with overfitting issues is a key factor when training DNN's.
+
+We can find the optimal learning rate by testing different learning rates and compare the results. Learning rates are usually set in scales of 10 (`0.1`, `0.01`, `0.001`, etc). The default learning rate for Adam in Keras is `0.001`.
+
+    scores = {}
+
+    for lr in [0.0001, 0.001, 0.01, 0.1]:
+
+        # make_model() is a custom function that creates all of the code we've seen in previous sections, except for model.fit()
+        model = make_model(learning_rate=lr)
+
+        history = model.fit(train_ds, epochs=10, validation_data=val_ds)
+        scores[lr] = history.history
+
+# Checkpointing
+
+When trying out different learning rates and plotting the results, you may observe that some iterations have better results than later iterations. This happens often. We can use **checkpointing** for saving intermediate training results instead of only keeping the latest, worse perfoming model.
+
+_Checkpointing_ consists of saving those models that perform better than previous ones. We do this by using a specific _callback_ (a function that will be called after each epoch is finished).
+
+    model.save_weights('model_v1.h5', save_format='h5')
+
+    checkpoint = keras.callbacks.ModelCheckpoint(
+        'xception_v1_{epoch:02d}_{val_accuracy:.3f}.h5',
+        save_best_only=True,
+        monitor='val_accuracy',
+        mode='max'
+    )
+
+    learning_rate = 0.001
+
+    model = make_model(learning_rate=learning_rate)
+
+    history = model.fit(
+        train_ds,
+        epochs=10,
+        validation_data=val_ds,
+        callbacks=[checkpoint]
+    )
+
+* `h5` format is a format for storing model weights in a binary file.
+* The `ModelCheckpoint()` callback function stores the model in a file.
+    * The file name template uses Python's `format()` notation for strings. In this example there are two additional variables inside the string:
+        * `epoch` will contain the number of epochs in `02d` format, which means that it will be a 2 digit number with a zero in front of it in the case of being a single digit.
+        * `val_accuracy` will contain the accuracy when evaluating with the validation dataset in `3f` format, which means it will contain up to 3 decimal digits.
+    * `save_best_only=True` means we will only save the best model until that point.
+    * `monitor` contains the metric we want to monitor; in our case, `val_accuracy`.
+    * `mode='max'` because we want the max accuracy.
+* Note the additional `callbacks=[checkpoint]` in the `fit()` function. `callbacks` contains a list of callback functions we want to call after each epoch.
+
+# Adding more layers
+
+The power of DNN's lay in their layers. Additional layers in networks allow them to make better predictions.
+
+We can add an additional dense layer in our model along with an activation function. Using the code from [this section](#final-model), we add an additional line and slightly another:
+
+    inputs = keras.Input(shape=(150, 150, 3))
+    base = base_model(inputs, training=False)
+    vectors = keras.layers.GlobalAveragePooling2D()(base)
+    
+    # Defining the numnber of nodes of our inner layer
+    size_inner = 100
+
+    # This is the new line
+    inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+    
+    outputs = keras.layers.Dense(10)(inner)
+    
+    model = keras.Model(inputs, outputs)
+
+* The inner layer takes the output from the pooling layer as input.
+* The `size_inner` variable could be passed as a parameter when calling a function that invokes this code,  thus making it a hyperparameter.
+* We use ReLU as the actication function for our inner layer.
+* Our final layer `outputs` now takes the output from the inner layer as input.
+    * Our final layer does not use an activation function because in [this section](#training-the-model) we specified that our loss function would take logits for its computations.
+
+Since we define `size_inner` as a hyperparameter, we can also tune it when training our model.
+
+    learning_rate = 0.001
+
+    scores = {}
+
+    for size in [10, 100, 1000]:
+        model = make_model(learning_rate=learning_rate, size_inner=size)
+        history = model.fit(train_ds, epochs=10, validation_data=val_ds)
+        scores[size] = history.history
+    
+* Note the additional parameter when calling `make_model()`.
+
+# Regularization and dropout
+
+Depending on the dataset, we risk overfitting our network and make it learn biases that distort the results. For example, if we want the network to recognize images of t-shirts and the t-shirts have logos on them, the network could learn to recognize those logos as the "t-shirt" category rather than the actual shape of the t-shirt.
+
+If we were to "block" parts of the image with black squares in a way that would still make the object recognizable, the network may discard some features in favor of more important ones (like the logos in our example, or elements in the background), thus improving its performance.
+
+**Dropout** is a technique that simulates this behavior. Instead of blocking parts of the image, we simply "freeze" nodes so that certain features don't propagate. On each epoch, we freeze different nodes, which means that their values are not updated. 
+
+In Keras, `dropout` is defined as an additional special layer. 
+
+    inputs = keras.Input(shape=(150, 150, 3))
+    base = base_model(inputs, training=False)
+    vectors = keras.layers.GlobalAveragePooling2D()(base)
+    
+    # Defining the droprate
+    droprate=0.5
+    inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+    drop = keras.layers.Dropout(droprate)(inner)
+    
+    outputs = keras.layers.Dense(10)(drop)
+    
+    model = keras.Model(inputs, outputs)
+
+* The `droprate` defines how much of the layer will freeze, defined as a value in the range `[0,1]`. The frozen nodes are random and change after every epoch.
+    * In our example, `0.5` means that half of the nodes will freeze on each epoch.
+* We define the special layer `drop` and take the output of `inner`.
+

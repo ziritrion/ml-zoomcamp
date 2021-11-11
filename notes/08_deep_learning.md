@@ -6,7 +6,7 @@ A deep neural network is a model inspired by animal brains. It's composed of int
 
 Depending on the structure of the connections and the nature of the operations, DNN's can be classified into many subtypes (_multilayer perceptrons_, _convolutional neural networks_, _recursive neural networks_, etc).
 
-So far, we've only seen techniques that deal with _tabular data_; data which fits neatly into tables. But not all data can fit into tables, and not all techniques are suitable for this kind of data. This is where DL comes in.
+So far, we've only seen techniques that deal with _tabular data_; data which fits neatly into tables. But not all data can fit into tables, and not all techniques with good results for tabular data can be used on non-tabular data. This is where DL comes in.
 
 DL can be used for both regression and classification problems that deal with non-tabular data such as images, video, audio,etc. DNN's have been proven to be very reliable models that have pushed the ML field forward, but they're very complex and hard to train.
 
@@ -21,7 +21,7 @@ DL can be used for both regression and classification problems that deal with no
 
 ## Working with images
 
-    `from tensorflow.keras.preprocessing.image import load_img`
+    from tensorflow.keras.preprocessing.image import load_img
     
     # filepath is the path to the file containing an image
     img = load_img(filepath, target_size=(299, 299))
@@ -75,7 +75,7 @@ Pre-trained DNN's are useful for speeding up work, but they may have been pretra
 
 A **Convolutional Neural Network** (CNN) is a type of DNN that is well suited for dealing with images. The Xception network used in the previous section is an example of CNN.
 
-CNN's have 2 type of layers: ***convolutional*** and ***dense***.
+CNN's have 2 type of layers: ***convolutional*** and ***dense***, as well as a special type called ***pooling***:
 
 * A **convolutional layer** (CL) is made of "filters": matrices that recognize specific patterns. The filters move accross the image and create an output consisting of a "similarity array", or a filtered image where every "region" has a higher value the more similar it is to the filter. These outputs are called **feature maps**.
 ![feature map](images/08_d02.png)
@@ -89,6 +89,7 @@ CNN's have 2 type of layers: ***convolutional*** and ***dense***.
     * Filters are _learned_; they are not predefined. Training a CNN means training the filters.
     * A final CL will usually output a flat 1-D vector. For example, our `(299, 299, 3)` image could be converted to a `(2048)` vector. This vector is called a **vector representation** of the original image.
 * A **pooling layer** is a special type of layer that is used along with convolutional layers. It essentially reduces the size of the feature maps, thus reducing the amount of parameters we need to deal with.
+    * Pooling layers don't hawe weights that need to be trained. They just apply a simple operation on the feature maps, usually average or max values.
 * A **dense layer** is made of _nodes_ (or _neurons_) that apply linear and non-linear transformations to the input.
     * Each node takes each component of the input and applies a linear transformation to them (multiplies each value with a _weight_, then adds all the elements together along with an optional _bias_, the node's own weight), which results in an output in the form of a single scalar. The output then goes through an **activation function** (a non-linear transformation).
         * The outputs of a dense layer before going into its activation function are called _logits_.
@@ -241,7 +242,7 @@ We can find the optimal learning rate by testing different learning rates and co
 
 When trying out different learning rates and plotting the results, you may observe that some iterations have better results than later iterations. This happens often. We can use **checkpointing** for saving intermediate training results instead of only keeping the latest, worse perfoming model.
 
-_Checkpointing_ consists of saving those models that perform better than previous ones. We do this by using a specific _callback_ (a function that will be called after each epoch is finished).
+***Checkpointing*** consists of saving those models that perform better than previous ones. We do this by using a specific _callback_ (a function that will be called after each epoch is finished).
 
     model.save_weights('model_v1.h5', save_format='h5')
 

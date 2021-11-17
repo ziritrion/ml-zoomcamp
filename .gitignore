@@ -188,3 +188,8 @@ cython_debug/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,python
+
+# datasets
+*.zip
+08_deep_learning/train/*
+08_deep_learning/val/*

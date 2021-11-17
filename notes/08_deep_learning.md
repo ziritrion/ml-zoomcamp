@@ -90,6 +90,8 @@ CNN's have 2 type of layers: ***convolutional*** and ***dense***, as well as a s
     * A final CL will usually output a flat 1-D vector. For example, our `(299, 299, 3)` image could be converted to a `(2048)` vector. This vector is called a **vector representation** of the original image.
 * A **pooling layer** is a special type of layer that is used along with convolutional layers. It essentially reduces the size of the feature maps, thus reducing the amount of parameters we need to deal with.
     * Pooling layers don't hawe weights that need to be trained. They just apply a simple operation on the feature maps, usually average or max values.
+    * The main hyperparameter in pooling layers is the _pooling window size_, which specifies the area of the image in which the pooling operation will take place.
+        * For example, a _max pooling layer_ with a pooling window of size `(2,2)` will take a 2x2 section of the image, keep the max value and discard the rest. This layer will eventually output a feature map whose sides have been halved in size.
 * A **dense layer** is made of _nodes_ (or _neurons_) that apply linear and non-linear transformations to the input.
     * Each node takes each component of the input and applies a linear transformation to them (multiplies each value with a _weight_, then adds all the elements together along with an optional _bias_, the node's own weight), which results in an output in the form of a single scalar. The output then goes through an **activation function** (a non-linear transformation).
         * The outputs of a dense layer before going into its activation function are called _logits_.
@@ -124,10 +126,10 @@ Following the Keras/Xception example from before, this is how we could do it.
     from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
     train_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
-    train_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32)
+    train_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, class_mode='categorical')
 
     val_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
-    val_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, shuffle=False)
+    val_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, class_mode='categorical', shuffle=False)
 
 * `ImageDataGenerator()` is a special class that allows us to create image datasets. We instantiate it in order to access its properties and functions.
     * `preprocess_input` is the image preprocessing function imported in the previous example.
@@ -135,8 +137,12 @@ Following the Keras/Xception example from before, this is how we could do it.
     * We set `target_size=(150,150)` because a 150x150 image is 1/4 the size of the original 299x299 images, so the training will be 4 times faster.
     * `batch_size` specifies the amount of images that the network will take every time.
         * Knowing the image and batch size, we can calculate that the input will be of size `(32, 150, 150, 3)`, there will be `32` vector representations and `32` predictions as output.
-    * If we run `train_ds.class_indices`, we would get the categories that the dataset contains. These categories match the name and amount of folders inside the specified directory, so if our directory has the folders `cats` and `dogs`, our dataset will contain those 2 categories.
+    * `class_mode` specifies the kind of label arrays that are returned:
+        * `categorical` is the default mode, for multicategory classification problems. Labels will be 2D one-hot encoded labels.
+        * `binary` is for binary classification models. Labels will be 1D binary models.
+        * There are more modes for other specific kind of problems (`sparse`, `input`) but they won't be covered here.
     * For the validation dataset we disable shuffling, since it isn't really necessary.
+    * After creating the datasets, if we run `train_ds.class_indices`, we would get the categories that the dataset contains. These categories match the name and amount of folders inside the specified directory, so if our directory has the folders `cats` and `dogs`, our dataset will contain those 2 categories.
 
 ## Base model
 
@@ -340,3 +346,83 @@ In Keras, `dropout` is defined as an additional special layer.
     * In our example, `0.5` means that half of the nodes will freeze on each epoch.
 * We define the special layer `drop` and take the output of `inner`.
 
+# Data augmentation
+
+Besides dropout, another way of improving the performance of the network is with **data augmentation**. _Data augmentation_ consists of increasing the size of our dataset with slight modifications of our images, so that the network does not fixate over unimportant features.
+
+Some of these modifications are flips, rotations, shifts (moving the object inside the image), shears (distortions), zooms (in single dimensions, so that dimension shrinks or expands, or in both dimensions), change the brightness/contrast, black patches (like in dropout, but actually modifying the images), and any possible combination of these.
+
+Not all transformations make sense. If our task requires us to recognize pieces of clothing and we expect all incoming images to be aligned in a specific way, horizontal flips aren't necessary and are a waste of resources. Looking at the dataset and understanding the kind of data you need and what your task is is important in order to choose how to augment your data.
+
+For some specific transformations, the degree of transformation can be treated as a hyperparameter and can be finetuned.
+
+We only apply transformations to our training dataset! It's not necessary to augment the validation dataset, because the final user won't distort their image in any way.
+
+In code, we simply add the transformations to `ImageDataGenerator` as seen on [the Transfer Learning section](#transfer-learning):
+
+    train_gen = ImageDataGenerator(
+        preprocessing_function=preprocess_input,
+        rotation_range=30,
+        width_shift_range=10.0,
+        height_shift_range=10.0,
+        shear_range=10.0,
+        zoom_range=0.1,
+        vertical_flip=True,
+        horizontal_flip=False,
+    )
+
+* `rotation_range=30` takes the range `[-30, 30]` and rotates each image randomly in that range.
+* `width_shit_range` and `height_shift_range` will also shift the image on a specific axis in the range `[-10, 10]`. Same for `shear_range`.
+* `zoom_range=0.1` is slightly different. The parameter indicates the amount of change, so `0.1` means the range will be `[0.9, 1.1]`.
+
+# Testing
+
+Once you've trained your model in Keras, evaluating it is as simple as this:
+
+`model.evaluate(test_ds)`
+
+# Advanced topics
+
+## Convolutional filters
+
+A convolutional filter (or kernel) is an array of numbers. For 2D images, filters are 2D arrays.
+
+The filter "slides" accros the image, which is actually a 2D array itself. Each time the filter moves it computes a _similarity value_, and the filter keeps sliding and computing values until it has covered the complete image.
+
+The similarity value is computed with the filter and the section of image covered by the filter. So, if we have a 3x3 filter, we will use a 3x3 section of the image.
+
+The actual value is computed as the _dot product_ of _flattened versions_ of the _transpose of the filter matrix_ and the _image section matrix_. In other words: it's the result of doing the matrix multiplication `WᵀX` (where `W` is the filter matrix and `X` is the image section matrix) and then adding all the components of the resulting matrix.
+
+The ***stride*** is the size of the "steps" that the filter does when it slides. The stride is usually the same in the `x` and `y` axis. A stride of `1` means that the filter will only shift one pixel in a single dimension per step, and then shift one pixel in the second dimension once the first dimension has been covered. A stride of `2` means that the filter will shift 2 pixels, skipping one pixel per shift, and so on. The bigger the stride, the smaller size the output will be.
+
+![filters](images/08_d15.png)
+
+Additionally, in convolutional layers, ***padding*** is often used. _Padding_ is adding additional rows and columns of zeros evenly around the input image, making it possible for the filter to center on the egde and corner pixels of the image.
+
+There are more additional hyperparameters such as ***dilation***, but they are much less common.
+
+## RMSE for regression models in Keras
+
+Accuracy is the standard metric for network performance in Keras, but for regression problems you may prefer to use RMSE instead. You will have to manually include the metric when compiling the model, like so:
+
+    loss = keras.losses.MeanSquaredError()
+    rmse = keras.metrics.RootMeanSquaredError()
+
+    model.compile(optimizer=optimizer, loss=loss, metrics=[rmse])
+
+## Sequential model
+
+In the [final model section](#final-model) we used _functional style coding_ to define our network using Keras' Functional API.
+
+Alternatively, you can use ***sequential style***. Sequential style makes use of Keras' Sequential model, which is a simpler, straight-forward way of creating networks.
+
+    model = keras.models.Sequential()
+
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+
+* We first instantiate a `Sequential` class object.
+* We then add our layers to the model in order, starting from the input layer to the ouput.
+* `Sequential` does not need an `Input` object to specify the inputs; it's inferred from the layers.
+
+The Sequential model allows for very easy and quick model creation but is limited to single input, single output stacks of layers. It does not allow complex architectures and makes transfer learning more difficult. Using functional style might be trickier at the beginning but allows for more explicit complex network creation with clear layer order.

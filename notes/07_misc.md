@@ -1,3 +1,5 @@
+Session 7 is actually reserved for the midterm project. During these weeks we did not have any theory videos but we did have some "office hours" live sessions which contained useful tips and tricks. These notes are a recopilation of them.
+
 # Multiclass classification
 
 ## Multiclass Logistic Regression

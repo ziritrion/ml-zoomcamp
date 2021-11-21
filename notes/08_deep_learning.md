@@ -129,7 +129,7 @@ Following the Keras/Xception example from before, this is how we could do it.
     train_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, class_mode='categorical')
 
     val_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
-    val_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, class_mode='categorical', shuffle=False)
+    val_ds = val_gen.flow_from_directory('./clothing-dataset-small/validation', target_size=(150, 150), batch_size=32, shuffle=False)
 
 * `ImageDataGenerator()` is a special class that allows us to create image datasets. We instantiate it in order to access its properties and functions.
     * `preprocess_input` is the image preprocessing function imported in the previous example.

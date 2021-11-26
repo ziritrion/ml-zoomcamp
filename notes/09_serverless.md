@@ -65,7 +65,7 @@ Converting an existing Keras model to TF-Lite is pretty straightforward.
     tflite_model = converter.convert()
 
     with open('model.tflite', 'wb') as f_out:
-        f.write(tflite_model)
+        f_out.write(tflite_model)
 
 You simply create a `converter` object trained on your model, then convert the model and store it to a file for later use.
 
@@ -75,7 +75,7 @@ Using a TF-Lite model is slightly more involved than a simple Keras model, becau
 
     import tensorflow.lite as tflite
 
-    interpreter = tflite.Interpreter(model_path='tflite.model')
+    interpreter = tflite.Interpreter(model_path='model.tflite')
     interpreter.allocate_tensors()
 
 * We first create an `interpreter` object that loads the model from a file.
@@ -185,7 +185,7 @@ We can use a publicly available Lambda Python base image from Amazon as our base
 * We do not use `pipenv` in this Dockerfile because it's difficult to make it work with TensorFlow.
 * TensorFlow's available package on `pip` is made for Debian-based distros and will not work on our image. We need to recompile TensorFlow for our image. Luckily, there are available precompiled images on [Alexey Grigorev's Repo](https://github.com/alexeygrigorev/tflite-aws-lambda).
     * `Wheel` is a built-package format supported by `pip`. Instead of downloading a package from pip's repo, we directly install a wheel from a URL.
-* We don't need an entrypoint in this Docker image; instead we just call our `lambda_handler()` function inside the `lambda_function.py` script.
+* We don't need an entrypoint in this Docker image because it's already set up for us in the source image; instead we overwrite the entrypoint's parameters to call our `lambda_handler()` function inside the `lambda_function.py` script with the `CMD` command.
 
 ***WARNING:*** _Lambda requires that the output of `lambda_handler()` be serializable in order to convert it to JSON and send them back to the user. The code from previous sections returns numpy arrays of type `float32`, which are not serializable by the JSON library. This issue can easily be solved by converting a numpy array to a Python list with the `tolist()` method or by casting each `float32` value to Python floats with `float()`._
 

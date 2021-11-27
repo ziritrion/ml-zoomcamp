@@ -1,3 +1,7 @@
+> [Back to Index](README.md)
+
+> Next: [Linear Regression](02_linear_regression.md)
+
 # Introduction to Machine Learning (ML)
 
 Let's suppose you want to sell a car. Depending on your car's make, model, age, mileage, etc., you can sell it for a certain price. An expert can look at the car's _features_ and determine a price based on them. In other words, the expert took _data_ and extracted _patterns_ from that data.
@@ -258,3 +262,7 @@ Vectors and matrices are extremely convenient for ML because they allow us to so
 **Pandas** is a python data analysis library. It offers data structures and operations for manipulating tabular data. Its main data structure is called a **dataframe**, which is basically a table.
 
 Please check the [Python and libraries cheatsheet](https://gist.github.com/ziritrion/9b80e47956adc0f20ecce209d494cd0a#pandas) for reference.
+
+> [Back to Index](README.md)
+
+> Next: [Linear Regression](02_linear_regression.md)

@@ -1,3 +1,9 @@
+> Previous: [Deployment](05a_deployment.md)
+
+> [Back to Index](README.md)
+
+> Next: [Midterm Project Tips & Tricks](07_misc.md)
+
 # Decision Trees
 
 A ***decision tree*** is a flowchart-like structure in which each internal node is a test on an attribute (such as flipping a coin and getting heads or tails), each branch is the outcomes of such test and each leaf/final node represents a class label (a _decision_ after computing all attributes).
@@ -175,3 +181,9 @@ Other hyperparameters of interest:
 * `alpha` (default: `0`) AKA L1 regularization.
 
 Out of all the methods we've seen, Gradient Boosting Trees are often the model with the better performance, but they're harder to train and finetune than decision trees or random forests.
+
+> Previous: [Deployment](05a_deployment.md)
+
+> [Back to Index](README.md)
+
+> Next: [Midterm Project Tips & Tricks](07_misc.md)

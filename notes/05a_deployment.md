@@ -1,3 +1,10 @@
+> Previous: [Evaluation metrics for Classification models](04_classification_eval_metrics.md)
+
+> [Back to Index](README.md)
+>> Extra: [Virtual environments on Intel Macs](05b_virtenvs.md)
+
+> Next: [Decision Trees](06_trees.md)
+
 # Deploying Machine Learning Models
 
 ## Overview
@@ -43,3 +50,10 @@ Check the [VM and containers gist](https://gist.github.com/ziritrion/1842c8a4c48
 ## Push the container to the cloud
 
 Tools such as Amazon Web Services Elastic Beanstalk offer easy ways to push a container and deploy it to a production environment.
+
+> Previous: [Evaluation metrics for Classification models](04_classification_eval_metrics.md)
+
+> [Back to Index](README.md)
+>> Extra: [Virtual environments on Intel Macs](05b_virtenvs.md)
+
+> Next: [Decision Trees](06_trees.md)

@@ -1,3 +1,10 @@
+> Previous: [Classification / Logistic Regression](03_classification.md)
+
+> [Back to Index](README.md)
+
+> Next: [Deployment](05a_deployment.md)
+>> Extra: [Virtual environments on Intel Macs](05b_virtenvs.md)
+
 # Evaluation Metrics for Classification Models
 
 ## Accuracy and Dummy Model
@@ -82,3 +89,9 @@ What the AUC actually is is the _probability of a random positive sample having 
 
 ***K-fold Cross Validation*** consists on evaluating the same model on different subsets of data. We set apart a test data subset but for the remaining data, we split it in `K` parts (_folds_) and we reserve some parts for training and others for validation, and then repeat the process multiple times for different permutations. We can then compute the AUC score for each permutation and then calculate the mean and standard deviation of all of them to get the average prediction and the spread within predictions.
 
+> Previous: [Classification / Logistic Regression](03_classification.md)
+
+> [Back to Index](README.md)
+
+> Next: [Deployment](05a_deployment.md)
+>> Extra: [Virtual environments on Intel Macs](05b_virtenvs.md)

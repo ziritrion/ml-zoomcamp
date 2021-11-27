@@ -11,6 +11,7 @@ Here are the notes I took from the course's videos.
 * [Session 6: Decision Trees](06_trees.md)
 * [Session 7: Miscellaneous](07_misc.md)
 * [Session 8: Deep Learning](08_deep_learning.md)
+* [Session 9: Serverless Deep Learning](09_serverless.md)
 
 Additionally, the following gists with cheatsheets are available.
 

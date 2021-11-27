@@ -1,3 +1,9 @@
+> Previous: [Deep Learning](08_deep_learning.md)
+
+> [Back to Index](README.md)
+
+> Next: _(Coming soon)_
+
 # Intro to Serverless Deep Learning
 
 ![intro](images/09_d01.png)
@@ -259,3 +265,9 @@ Lambda charges you each time that your `lambda_handler` method is called; specif
     * Copy the invoke URL and append the method you created previously at the end, like this: `https://woeijfw.execute-api.eu-west-1.amazonaws.com/test/predict`
 
 ***WARNING:*** _if you followed the steps above, the API is now public and can be accessed by anyone, which can lead to abuse. Securing the access to your API falls beyond the scope of this course._
+
+> Previous: [Deep Learning](08_deep_learning.md)
+
+> [Back to Index](README.md)
+
+> Next: _(Coming soon)_

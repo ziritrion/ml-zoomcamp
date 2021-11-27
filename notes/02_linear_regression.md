@@ -1,3 +1,9 @@
+> Previous: [Intro to Machine Learning](01_intro.md)
+
+> [Back to Index](README.md)
+
+> Next: [Classification / Logistic Regression](03_classification.md)
+
 # Linear regression
 
 ## General formula for ML
@@ -163,3 +169,9 @@ We want to find the best value for the regularization parameter. For Linear Regr
     1. Plot histogram for easy visual check.
 1. Test your model with the test dataset.
 1. Use your model!
+
+> Previous: [Intro to Machine Learning](01_intro.md)
+
+> [Back to Index](README.md)
+
+> Next: [Classification / Logistic Regression](03_classification.md)

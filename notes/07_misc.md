@@ -1,3 +1,9 @@
+> Previous: [Decision Trees](06_trees.md)
+
+> [Back to Index](README.md)
+
+> Next: [Deep Learning](08_deep_learning.md)
+
 Session 7 is actually reserved for the midterm project. During these weeks we did not have any theory videos but we did have some "office hours" live sessions which contained useful tips and tricks. These notes are a recopilation of them.
 
 # Multiclass classification
@@ -280,3 +286,8 @@ k-NN has good performance but the models are very big because they need to "reme
 
 k-NN is a good fit for **search** problems. We take a _query_ and we compare it to elements in our database, looking for the _highest similarity_ (or _lowest distance/error_, which is the same). We **rank** the found elements and present them as our prediction.
 
+> Previous: [Decision Trees](06_trees.md)
+
+> [Back to Index](README.md)
+
+> Next: [Deep Learning](08_deep_learning.md)

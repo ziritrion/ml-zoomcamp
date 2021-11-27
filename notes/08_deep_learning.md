@@ -1,3 +1,9 @@
+> Previous: [Midterm Project Tips & Tricks](07_misc.md)
+
+> [Back to Index](README.md)
+
+> Next: [Serverless Deep Learning](09_serverless.md)
+
 # Introduction to Deep Learning
 
 **Deep Learning** (DL) is a ML technique that uses ***deep neural networks*** (DNN's) as models.
@@ -426,3 +432,9 @@ Alternatively, you can use ***sequential style***. Sequential style makes use of
 * `Sequential` does not need an `Input` object to specify the inputs; it's inferred from the layers.
 
 The Sequential model allows for very easy and quick model creation but is limited to single input, single output stacks of layers. It does not allow complex architectures and makes transfer learning more difficult. Using functional style might be trickier at the beginning but allows for more explicit complex network creation with clear layer order.
+
+> Previous: [Midterm Project Tips & Tricks](07_misc.md)
+
+> [Back to Index](README.md)
+
+> Next: [Serverless Deep Learning](09_serverless.md)

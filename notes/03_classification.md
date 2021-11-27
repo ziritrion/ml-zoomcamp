@@ -1,3 +1,9 @@
+> Previous: [Linear Regression](02_linear_regression.md)
+
+> [Back to Index](README.md)
+
+> Next: [Evaluation metrics for Classification models](04_classification_eval_metrics.md)
+
 # Binary Classification (Logistic Regression)
 
 * `g(x_i) ≈ y_i`
@@ -82,3 +88,9 @@ We can check the accuracy of the model by comparing the predictions with the tar
     1. Train a smaller model with fewer features
 1. Use the model
     * Combine the train and validation datasets for your final model and test it with the test dataset.
+
+> Previous: [Linear Regression](02_linear_regression.md)
+
+> [Back to Index](README.md)
+
+> Next: [Evaluation metrics for Classification models](04_classification_eval_metrics.md)

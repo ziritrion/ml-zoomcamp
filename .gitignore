@@ -193,3 +193,7 @@ cython_debug/
 *.zip
 08_deep_learning/train/*
 08_deep_learning/val/*
+
+# models
+09_serverless/*.h5
+09_serverless/*.tflite

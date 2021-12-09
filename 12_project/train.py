@@ -115,7 +115,7 @@ def make_train_model(train_ds_mn, val_ds_mn, learning_rate = 0.001):
     )
 
     checkpoint = keras.callbacks.ModelCheckpoint(
-        'mobilenet_v1_{epoch:02d}_{val_accuracy:.3f}.h5',
+        'mobilenet_final_{epoch:02d}_{val_accuracy:.3f}.h5',
         save_best_only=True,
         monitor='val_accuracy',
         mode='max'

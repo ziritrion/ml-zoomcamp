@@ -3,8 +3,13 @@ from urllib import request
 from PIL import Image
 import numpy as np
 
-#import tflite_runtime.interpreter as tflite
-import tensorflow.lite as tflite
+''' IMPORTANT
+    Only one of the following imports must be uncommented.
+    Docker: tflite_runtime
+    Local testing: tensorflow.lite
+'''
+import tflite_runtime.interpreter as tflite
+#import tensorflow.lite as tflite
 
 interpreter = tflite.Interpreter(model_path='model.tflite')
 interpreter.allocate_tensors()

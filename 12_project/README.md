@@ -2,3 +2,37 @@ This folder contains all the required code for the [capstone project of Alexey G
 
 # Dataset Description
 
+_Original dataset [found here](https://www.kaggle.com/kritikseth/fruit-and-vegetable-image-recognition)_
+
+This dataset contains images of the following food items:
+
+* Fruits: banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.
+* Vegetables: cucumber, carrot, capsicum, onion, potato, lemon, tomato, raddish, beetroot, cabbage, lettuce, spinach, soy bean, cauliflower, bell pepper, chilli pepper, turnip, corn, sweetcorn, sweet potato, paprika, jalepeño, ginger, garlic, peas, eggplant.
+
+This dataset contains three folders:
+
+* train (100 images each)
+* test (10 images each)
+* validation (10 images each)
+
+Each of the above folders contains subfolders for different fruits and vegetables wherein the images for respective food items are present
+
+# Project Description
+
+For the capstone project I decided to work on a project involving Deep Learning. I opted for a simple ***image recognition task*** due to time constraints and inexperience.
+
+This is a simple dataset containing 36 different classes of fruits and vegetables. The dataset is very small, which makes training a network from scratch unfeasible. Thus, the project relies exclusively on Transfer Learning for image feature extraction.
+
+3 different convolutional architectures were used:
+
+* `Xception`: one of the most popular architectures available on Keras.
+* `MobileNet_v2`: a very lean and efficient architecture with excellent performance to model size ratio.
+* `NasNetLarge`: One of the largest models available on Keras besides `VGG`. Chosen for its large size but excellent accuracy as listed on the [Keras Applications website](https://keras.io/api/applications/).
+
+# Files
+
+# Environment setup
+
+# Docker
+
+# Deployment

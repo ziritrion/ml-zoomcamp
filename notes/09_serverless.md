@@ -207,17 +207,20 @@ You can install the AWS CLI tool with `pip install awscli`.
 
 1. Create a registry in ECR
     * `aws ecr create-repository --repository-name my-registry`
-    * The output of this command will contain the registry URL. Copy it.
+    * The output of this command will contain the registry URI. Copy it. Take note of the `aws_account_id` (first part of the URI) and the `region` (string right before `amazonaws.com`)
 1. Get the login info for the repo
-    * `aws ecr get-login --no-include-email`
+    * (**DEPRECATED**, go to step 3 directly) `aws ecr get-login --no-include-email`
     * This will output a new command that you can use to login to the repo.
         * Your password will be visible in plain text. If you are sharing your screen, you can use `sed` to parse the text and change the output.
         * `aws ecr get-login --no-include-email | sed 's/[0-9a-zA-Z=]\{20,\}/PASSWORD/g'`
             * `sed` will parse the text and look for a string of length 20 containing numbers, upper and lowercase letters and the `=` sign, and replace it with the word `PASSWORD`.
 1. Login to the repo. 2 ways:
-    1. Copy the output of the previous command.
-    1. Use this trick to use the output of a command as the actual command:
-        * `$(aws ecr get-login --no-include-email)`
+    1. (**DEPRECATED**) by making use of the `get-login` info; 2 ways:
+        1. Copy the output of the previous command.
+        1. Use this trick to use the output of a command as the actual command:
+            * `$(aws ecr get-login --no-include-email)`
+    1. `aws ecr get-login-password --region` _region_ `| docker login --username AWS --password-stdin` _aws_account_id_`.dkr.ecr.`_region_`.amazonaws.com`
+        * Make sure to change `region` and `aws_account_id` with the info you got from step 1.
 1. Create the `REMOTE_URI` of your image by attaching a ***tag*** to the end of the repo URL preceded by a colon.
     * Consider the example URL `123456.dkr.ecr.eu-west-1.amazonaws.com/my-registry`.
         * `123456` is the ***account***.

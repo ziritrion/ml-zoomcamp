@@ -47,6 +47,22 @@ This is a simple dataset containing 36 different classes of fruits and vegetable
     * `lambda-function.py` is a copy of the same file on the root project folder except for a changed library for deployment.
     * The folder should also contain `model.tflite`; the actual model file that is needed for predictions.
 
+* `models` contains all the models that have been trained in case you don't want or can't retrain them (hyperparameter tuning is particularly time intensive). These files have been uploaded to [Git LFS](https://git-lfs.github.com/).
+
+You will also need the dataset. The original dataset can be downloaded from Kaggle [in this link](https://www.kaggle.com/kritikseth/fruit-and-vegetable-image-recognition). Please unzip it in the project folder and make sure that the final folder structure is as follows:
+
+    /12_project
+        /data
+            /test
+            /train
+            /validation
+
+The code assumes that the dataset will be set up like this. Otherwise, it will fail. Some part of the code also make use of additional images that I manually downloaded. For convenience, I'm hosting the dataset and the additional images on Dropbox in this link.
+
+https://www.dropbox.com/s/ynl1h8e4zf4sqj2/data.zip?dl=0
+
+Download and unzip the file inside the project's root folder. It should maintain the folder structure mentioned above.
+
 
 # Environment setup
 

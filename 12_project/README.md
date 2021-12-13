@@ -33,6 +33,41 @@ This is a simple dataset containing 36 different classes of fruits and vegetable
 
 # Environment setup
 
+The Jupyter Notebook and Python scripts were all tested on Ubuntu 20.04 Intel x64.
+
+## Pip
+
+You may install all dependencies with `pip` with the following command:
+
+`pip install -r pip-requirements.txt`
+
+> Note: `pip-requirements.txt` was created with the following command:
+
+> `pip list --format=freeze > pip-requirements.txt`
+
+## Conda
+
+2 alternative methods are provided:
+
+1. Create an environment named `tf` with the provided `conda-environment.yml` file:
+
+    * `conda env create -f conda-environment.yml`
+    * You can change the name of the environment by modifying the first line of the `conda-environment.yml` file. Modify and save the file before creating the environment!
+
+1. Create an environment with a name of your choosing with all the dependencies listed in `conda-requirements.txt`:
+    * `conda create --name <env_name> --file conda-requirements.txt`
+    * `<env_name>` may be any name you choose.
+
+> Note: `conda-environment.yml` was created with the following command:
+
+> `conda env export --from-history > conda-environment.yml`
+
+> `conda-requirements.txt` was created with the following command:
+
+> `conda list -e > conda-requirements.txt`
+
+
+
 # Docker
 
 # Deployment

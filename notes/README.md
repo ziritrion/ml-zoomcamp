@@ -9,9 +9,11 @@ Here are the notes I took from the course's videos.
 * [Session 5: Deploying Machine Learning Models](05a_deployment.md)
     * [Extra: virtual environments in Intel Macs](05b_virtenvs.md)
 * [Session 6: Decision Trees](06_trees.md)
-* [Session 7: Miscellaneous](07_misc.md)
+* [Session 7: Midterm project](../07_midterm_project/README.md)
+    * [Extra: Office hours notes](07_misc.md)
 * [Session 8: Deep Learning](08_deep_learning.md)
 * [Session 9: Serverless Deep Learning](09_serverless.md)
+* [Session 12: Capstone project](../12_project/README.md)
 
 Additionally, the following gists with cheatsheets are available.
 

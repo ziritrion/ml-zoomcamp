@@ -1,6 +1,7 @@
 > Previous: [Decision Trees](06_trees.md)
 
 > [Back to Index](README.md)
+>> [Back to Midterm Project](../07_midterm_project/README.md)
 
 > Next: [Deep Learning](08_deep_learning.md)
 
@@ -289,5 +290,6 @@ k-NN is a good fit for **search** problems. We take a _query_ and we compare it 
 > Previous: [Decision Trees](06_trees.md)
 
 > [Back to Index](README.md)
+>> [Back to Midterm Project](../07_midterm_project/README.md)
 
 > Next: [Deep Learning](08_deep_learning.md)

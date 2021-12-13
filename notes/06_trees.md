@@ -1,8 +1,10 @@
 > Previous: [Deployment](05a_deployment.md)
+>> Extra: [Virtual environments on Intel Macs](05b_virtenvs.md)
 
 > [Back to Index](README.md)
 
-> Next: [Midterm Project Tips & Tricks](07_misc.md)
+> Next: [Midterm Project](../07_midterm_project/README.md)
+>> Extra: [Midterm Project Tips & Tricks](07_misc.md)
 
 # Decision Trees
 
@@ -183,7 +185,9 @@ Other hyperparameters of interest:
 Out of all the methods we've seen, Gradient Boosting Trees are often the model with the better performance, but they're harder to train and finetune than decision trees or random forests.
 
 > Previous: [Deployment](05a_deployment.md)
+>> Extra: [Virtual environments on Intel Macs](05b_virtenvs.md)
 
 > [Back to Index](README.md)
 
-> Next: [Midterm Project Tips & Tricks](07_misc.md)
+> Next: [Midterm Project](../07_midterm_project/README.md)
+>> Extra: [Midterm Project Tips & Tricks](07_misc.md)

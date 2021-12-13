@@ -1,3 +1,9 @@
+> Previous: [Decision Trees](../notes/06_trees.md)
+
+> [Back to Index](../notes/README.md)
+
+> Next: [Deep Learning](../notes/08_deep_learning.md)
+
 This folder contains all the required code for the [midterm project of Alexey Grigorev's ML Zoomcamp](https://github.com/alexeygrigorev/mlbookcamp-code/tree/master/course-zoomcamp/07-midterm-project).
 
 # Dataset Description
@@ -207,3 +213,9 @@ Here are some screenshots proving that the app can be successfully deployed. Due
 # Acknowledgments
 
 [Multi-stage Docker Builds](https://pythonspeed.com/articles/conda-docker-image-size/)
+
+> Previous: [Decision Trees](../notes/06_trees.md)
+
+> [Back to Index](../notes/README.md)
+
+> Next: [Deep Learning](../notes/08_deep_learning.md)

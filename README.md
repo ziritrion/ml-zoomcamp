@@ -9,3 +9,4 @@ Go check out [DataTalks](https://datatalks.club/)!
 
 * Check out my notes for the course [here](notes/).
 * [Midterm project](07_midterm_project/).
+* [Capstone project](12_project/).

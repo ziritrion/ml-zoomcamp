@@ -1,4 +1,5 @@
-> Previous: [Midterm Project Tips & Tricks](07_misc.md)
+> Previous: [Midterm Project](../07_midterm_project/README.md)
+>> Extra: [Midterm Project Tips & Tricks](07_misc.md)
 
 > [Back to Index](README.md)
 
@@ -433,7 +434,8 @@ Alternatively, you can use ***sequential style***. Sequential style makes use of
 
 The Sequential model allows for very easy and quick model creation but is limited to single input, single output stacks of layers. It does not allow complex architectures and makes transfer learning more difficult. Using functional style might be trickier at the beginning but allows for more explicit complex network creation with clear layer order.
 
-> Previous: [Midterm Project Tips & Tricks](07_misc.md)
+> Previous: [Midterm Project](../07_midterm_project/README.md)
+>> Extra: [Midterm Project Tips & Tricks](07_misc.md)
 
 > [Back to Index](README.md)
 

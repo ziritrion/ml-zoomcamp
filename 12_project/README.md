@@ -15,11 +15,11 @@ This dataset contains three folders:
 * test (10 images each)
 * validation (10 images each)
 
-Each of the above folders contains subfolders for different fruits and vegetables wherein the images for respective food items are present
+Each of the above folders contains subfolders for different fruits and vegetables wherein the images for respective food items are present.
 
 # Project Description
 
-For the capstone project I decided to work on a project involving Deep Learning. I opted for a simple ***image recognition task*** due to time constraints and inexperience.
+For the capstone project I decided to work on a project involving Deep Learning. I opted for a simple ***image classification task*** due to time constraints and inexperience.
 
 This is a simple dataset containing 36 different classes of fruits and vegetables. The dataset is very small, which makes training a network from scratch unfeasible. Thus, the project relies exclusively on Transfer Learning for image feature extraction.
 

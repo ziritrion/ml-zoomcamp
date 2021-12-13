@@ -32,7 +32,7 @@ def prepare_image(img, target_size):
 
 def preprocess(url):
     download = download_image(url)
-    img = prepare_image(download, (299, 299))
+    img = prepare_image(download, (224, 224))
     x = np.array(img, dtype='float32')
     x /= 127.5
     x -= 1.
@@ -41,7 +41,6 @@ def preprocess(url):
 
 def predict(url):
     X = preprocess(url)
-
     interpreter.set_tensor(input_index, X)
     interpreter.invoke()
     preds = interpreter.get_tensor(output_index)

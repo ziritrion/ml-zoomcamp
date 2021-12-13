@@ -8,8 +8,8 @@ import numpy as np
     Docker: tflite_runtime
     Local testing: tensorflow.lite
 '''
-#import tflite_runtime.interpreter as tflite
-import tensorflow.lite as tflite
+import tflite_runtime.interpreter as tflite
+#import tensorflow.lite as tflite
 
 interpreter = tflite.Interpreter(model_path='model.tflite')
 interpreter.allocate_tensors()

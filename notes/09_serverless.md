@@ -2,7 +2,7 @@
 
 > [Back to Index](README.md)
 
-> Next: _(Coming soon)_
+> Next: [Kubernetes and TensorFlow-Serving](10_kubernetes.md) 
 
 # Intro to Serverless Deep Learning
 
@@ -273,4 +273,4 @@ Lambda charges you each time that your `lambda_handler` method is called; specif
 
 > [Back to Index](README.md)
 
-> Next: _(Coming soon)_
+> Next: [Kubernetes and TensorFlow-Serving](10_kubernetes.md) 

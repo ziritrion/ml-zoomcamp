@@ -148,8 +148,34 @@ The `Predict()` method returns a Protobuf response object. We can access our pre
 
 This code is just a convenience to tag each prediction value to the class they belong to.
 
+Incidentally, this Jupyter Notebook code will be the basis for our gateway Flask app.
 
 # Creating a pre-processing service
+
+Remember that you can export a Jupyter Notebook to a Python script with the following command:
+
+    jupyter nbconvert --to script notebook.ipynb
+
+This command will output a `.py` file with the same name as the notebook.
+
+We can rename the script to `gateway.py`, clean it up, organize the code in methods and add a `if __name__ == '__main__'` statement in order to convert the script to a Flask app.
+
+>Note: a Flask cheatsheet is available [in this link](https://gist.github.com/ziritrion/9b80e47956adc0f20ecce209d494cd0a)
+
+There is one issue: in the notebook we defined the following function:
+
+    def np_to_protobuf(data):
+        return tf.make_tensor_proto(data, shape=data.shape)
+
+The `make_tensor_proto()` method is a TensorFlow method and TensorFlow is a huge library about 2GB in size. A smaller `tensorflow-cpu` library exists but it still is over 400MB in size.
+
+Since we only need to use that particular method, we can instead make use of a separate [`tensorflow-protobuf`](https://github.com/alexeygrigorev/tensorflow-protobuf) package which is available on pip.
+
+    !pip install tensorflow-protobuf==2.7.0
+
+The [GitHub page for `tensorflow-protobuf`](https://github.com/alexeygrigorev/tensorflow-protobuf) contains info on how to replace the `make_tensor_proto()` method.
+
+Since the additional code is wordy, it would be convenient to define the `np_to_protobuf()` method on a separate `proto.py` script and then import it to the gateway app with `from proto import np_to_protobuf`.
 
 # Running everything locally with Docker-compose
 

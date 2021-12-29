@@ -23,15 +23,19 @@ DL can be used for both regression and classification problems that deal with no
 
 **TensorFlow** is a library for ML and AI. **Keras** is a library that provides a Python interface for TensorFlow, making it simpler to use. Keras used to be an independent library but has been absorved into TensorFlow.
 
-    import tensorflow as tf
-    from tensorflow import keras
+```python
+import tensorflow as tf
+from tensorflow import keras
+```
 
 ## Working with images
 
-    from tensorflow.keras.preprocessing.image import load_img
-    
-    # filepath is the path to the file containing an image
-    img = load_img(filepath, target_size=(299, 299))
+```python
+from tensorflow.keras.preprocessing.image import load_img
+
+# filepath is the path to the file containing an image
+img = load_img(filepath, target_size=(299, 299))
+```
 
 When loading an image with `load_img()`, the resulting object is a **PIL image**. **PIL** stands for _Python Image Library_; PIL used to be a library but it was abandoned and nowadays the **Pillow** library is used instead, but the image format is the same.
 
@@ -54,19 +58,21 @@ The standard training dataset for general image classification is **ImageNet**, 
 
 For this example we will use a Xception network pre-trained on ImageNet.
 
-    from tensorflow.keras.applications.xception import Xception
-    from tensorflow.keras.applications.xception import preprocess_input
-    from tensorflow.keras.applications.xception import decode_predictions
-    
-    model = Xception(weights='imagenet', input_shape(299, 299, 3))
+```python
+from tensorflow.keras.applications.xception import Xception
+from tensorflow.keras.applications.xception import preprocess_input
+from tensorflow.keras.applications.xception import decode_predictions
 
-    # Batch, check notes below
-    X = np.array([x])
+model = Xception(weights='imagenet', input_shape(299, 299, 3))
 
-    X = preprocess_input(X)
+# Batch, check notes below
+X = np.array([x])
 
-    pred = model.predict(X)
-    decore_predictions(pred)
+X = preprocess_input(X)
+
+pred = model.predict(X)
+decore_predictions(pred)
+```
 
 * We instantiate a Xception network with pre-trained weights on the ImageNet dataset. We also specify a specific input shape that all input images must have; in this example, images will be of size 299x299 pixels with 3 channels (RGB color).
 * Xception takes a ***batch*** of images as input. A _batch_ is an array that contains images. The first dimension of this array contains the number of images, so if we were to input 5 images, we'd need an array of size `(5, 299, 299, 3)`.
@@ -130,13 +136,15 @@ Following the Keras/Xception example from before, this is how we could do it.
 
 ## Datasets
 
-    from tensorflow.keras.preprocessing.image import ImageDataGenerator
+```python
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-    train_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
-    train_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, class_mode='categorical')
+train_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
+train_ds = train_gen.flow_from_directory('./clothing-dataset-small/train', target_size=(150, 150), batch_size=32, class_mode='categorical')
 
-    val_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
-    val_ds = val_gen.flow_from_directory('./clothing-dataset-small/validation', target_size=(150, 150), batch_size=32, shuffle=False)
+val_gen = ImageDataGenerator(preprocessing_function=preprocess_input)
+val_ds = val_gen.flow_from_directory('./clothing-dataset-small/validation', target_size=(150, 150), batch_size=32, shuffle=False)
+```
 
 * `ImageDataGenerator()` is a special class that allows us to create image datasets. We instantiate it in order to access its properties and functions.
     * `preprocess_input` is the image preprocessing function imported in the previous example.
@@ -157,9 +165,11 @@ We begin creating our model by creating a Xception network and removing the dens
 
 ![topless xception](images/08_d13.png)
 
-    base_model = Xception(weights='imagenet', include_top=False, input_shape=(150, 150, 3))
+```python
+base_model = Xception(weights='imagenet', include_top=False, input_shape=(150, 150, 3))
 
-    base_model.trainable = False
+base_model.trainable = False
+```
 
 * In Keras terminology, the _top_ of a CNN is the dense layers, and the _bottom_ is the convolutional part. We want to replace the Xception top with our own, so we set `include_top` to `False`.
 * We don't want to retrain the convolutional part of the network, so we _freeze_ the convolutional layers by setting our top-less model to `trainable = False`.
@@ -170,15 +180,17 @@ With out top-less Xception model in place, we can define the rest of the model.
 
 ![final model](images/08_d14.png)
 
-    inputs = keras.Input(shape=(150, 150, 3))
+```python
+inputs = keras.Input(shape=(150, 150, 3))
 
-    base = base_model(inputs, training=False)
+base = base_model(inputs, training=False)
 
-    vectors = keras.layers.GlobalAveragePooling2D()(base)
+vectors = keras.layers.GlobalAveragePooling2D()(base)
 
-    outputs = keras.layers.Dense(10)(vectors)
+outputs = keras.layers.Dense(10)(vectors)
 
-    model = keras.Model(inputs, outputs)
+model = keras.Model(inputs, outputs)
+```
 
 * This code is written in ***functional style***: we use building blocks as _functions_ that are passed to each other in a row.
 * `keras.Input()` is an object that defines the shape of the input of our final model. This seems redundant but it's what Keras asks for.
@@ -208,14 +220,16 @@ The optimizer also needs to know how to change the weights and check how good th
 
 There are also many loss functions. We will use `CategoricalCrossentropy` because we're dealing with a multiclass classification problem (if we were dealing with a regression problem, we could use `MeanSquaredError`)
 
-    learning_rate = 0.01
-    optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+```python
+learning_rate = 0.01
+optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
 
-    loss = keras.losses.CategoricalCrossentropy(from_logits=True)
+loss = keras.losses.CategoricalCrossentropy(from_logits=True)
 
-    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
-    model.fit(train_ds, epochs=10, validation_data=val_ds)
+model.fit(train_ds, epochs=10, validation_data=val_ds)
+```
 
 * `learning_rate` defines the "step size" when changing the values. Higher values train faster but might not be precise enough to find ideal values; lower values are more precise but are much slower to train.
 * `keras.losses.CategoricalCrossentropy()` is our loss function.
@@ -241,15 +255,17 @@ Finding an intermediate value that balances fast enough training with overfittin
 
 We can find the optimal learning rate by testing different learning rates and compare the results. Learning rates are usually set in scales of 10 (`0.1`, `0.01`, `0.001`, etc). The default learning rate for Adam in Keras is `0.001`.
 
-    scores = {}
+```python
+scores = {}
 
-    for lr in [0.0001, 0.001, 0.01, 0.1]:
+for lr in [0.0001, 0.001, 0.01, 0.1]:
 
-        # make_model() is a custom function that creates all of the code we've seen in previous sections, except for model.fit()
-        model = make_model(learning_rate=lr)
+    # make_model() is a custom function that creates all of the code we've seen in previous sections, except for model.fit()
+    model = make_model(learning_rate=lr)
 
-        history = model.fit(train_ds, epochs=10, validation_data=val_ds)
-        scores[lr] = history.history
+    history = model.fit(train_ds, epochs=10, validation_data=val_ds)
+    scores[lr] = history.history
+```
 
 # Checkpointing
 
@@ -257,25 +273,27 @@ When trying out different learning rates and plotting the results, you may obser
 
 ***Checkpointing*** consists of saving those models that perform better than previous ones. We do this by using a specific _callback_ (a function that will be called after each epoch is finished).
 
-    model.save_weights('model_v1.h5', save_format='h5')
+```python
+model.save_weights('model_v1.h5', save_format='h5')
 
-    checkpoint = keras.callbacks.ModelCheckpoint(
-        'xception_v1_{epoch:02d}_{val_accuracy:.3f}.h5',
-        save_best_only=True,
-        monitor='val_accuracy',
-        mode='max'
-    )
+checkpoint = keras.callbacks.ModelCheckpoint(
+    'xception_v1_{epoch:02d}_{val_accuracy:.3f}.h5',
+    save_best_only=True,
+    monitor='val_accuracy',
+    mode='max'
+)
 
-    learning_rate = 0.001
+learning_rate = 0.001
 
-    model = make_model(learning_rate=learning_rate)
+model = make_model(learning_rate=learning_rate)
 
-    history = model.fit(
-        train_ds,
-        epochs=10,
-        validation_data=val_ds,
-        callbacks=[checkpoint]
-    )
+history = model.fit(
+    train_ds,
+    epochs=10,
+    validation_data=val_ds,
+    callbacks=[checkpoint]
+)
+```
 
 * `h5` format is a format for storing model weights in a binary file.
 * The `ModelCheckpoint()` callback function stores the model in a file.
@@ -293,19 +311,21 @@ The power of DNN's lay in their layers. Additional layers in networks allow them
 
 We can add an additional dense layer in our model along with an activation function. Using the code from [this section](#final-model), we add an additional line and slightly another:
 
-    inputs = keras.Input(shape=(150, 150, 3))
-    base = base_model(inputs, training=False)
-    vectors = keras.layers.GlobalAveragePooling2D()(base)
-    
-    # Defining the numnber of nodes of our inner layer
-    size_inner = 100
+```python
+inputs = keras.Input(shape=(150, 150, 3))
+base = base_model(inputs, training=False)
+vectors = keras.layers.GlobalAveragePooling2D()(base)
 
-    # This is the new line
-    inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
-    
-    outputs = keras.layers.Dense(10)(inner)
-    
-    model = keras.Model(inputs, outputs)
+# Defining the numnber of nodes of our inner layer
+size_inner = 100
+
+# This is the new line
+inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+
+outputs = keras.layers.Dense(10)(inner)
+
+model = keras.Model(inputs, outputs)
+```
 
 * The inner layer takes the output from the pooling layer as input.
 * The `size_inner` variable could be passed as a parameter when calling a function that invokes this code,  thus making it a hyperparameter.
@@ -315,14 +335,16 @@ We can add an additional dense layer in our model along with an activation funct
 
 Since we define `size_inner` as a hyperparameter, we can also tune it when training our model.
 
-    learning_rate = 0.001
+```python
+learning_rate = 0.001
 
-    scores = {}
+scores = {}
 
-    for size in [10, 100, 1000]:
-        model = make_model(learning_rate=learning_rate, size_inner=size)
-        history = model.fit(train_ds, epochs=10, validation_data=val_ds)
-        scores[size] = history.history
+for size in [10, 100, 1000]:
+    model = make_model(learning_rate=learning_rate, size_inner=size)
+    history = model.fit(train_ds, epochs=10, validation_data=val_ds)
+    scores[size] = history.history
+```
     
 * Note the additional parameter when calling `make_model()`.
 
@@ -336,18 +358,20 @@ If we were to "block" parts of the image with black squares in a way that would 
 
 In Keras, `dropout` is defined as an additional special layer. 
 
-    inputs = keras.Input(shape=(150, 150, 3))
-    base = base_model(inputs, training=False)
-    vectors = keras.layers.GlobalAveragePooling2D()(base)
-    
-    # Defining the droprate
-    droprate=0.5
-    inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
-    drop = keras.layers.Dropout(droprate)(inner)
-    
-    outputs = keras.layers.Dense(10)(drop)
-    
-    model = keras.Model(inputs, outputs)
+```python
+inputs = keras.Input(shape=(150, 150, 3))
+base = base_model(inputs, training=False)
+vectors = keras.layers.GlobalAveragePooling2D()(base)
+
+# Defining the droprate
+droprate=0.5
+inner = keras.layers.Dense(size_inner, activation='relu')(vectors)
+drop = keras.layers.Dropout(droprate)(inner)
+
+outputs = keras.layers.Dense(10)(drop)
+
+model = keras.Model(inputs, outputs)
+```
 
 * The `droprate` defines how much of the layer will freeze, defined as a value in the range `[0,1]`. The frozen nodes are random and change after every epoch.
     * In our example, `0.5` means that half of the nodes will freeze on each epoch.
@@ -367,16 +391,18 @@ We only apply transformations to our training dataset! It's not necessary to aug
 
 In code, we simply add the transformations to `ImageDataGenerator` as seen on [the Transfer Learning section](#transfer-learning):
 
-    train_gen = ImageDataGenerator(
-        preprocessing_function=preprocess_input,
-        rotation_range=30,
-        width_shift_range=10.0,
-        height_shift_range=10.0,
-        shear_range=10.0,
-        zoom_range=0.1,
-        vertical_flip=True,
-        horizontal_flip=False,
-    )
+```python
+train_gen = ImageDataGenerator(
+    preprocessing_function=preprocess_input,
+    rotation_range=30,
+    width_shift_range=10.0,
+    height_shift_range=10.0,
+    shear_range=10.0,
+    zoom_range=0.1,
+    vertical_flip=True,
+    horizontal_flip=False,
+)
+```
 
 * `rotation_range=30` takes the range `[-30, 30]` and rotates each image randomly in that range.
 * `width_shit_range` and `height_shift_range` will also shift the image on a specific axis in the range `[-10, 10]`. Same for `shear_range`.
@@ -423,10 +449,12 @@ In the [final model section](#final-model) we used _functional style coding_ to 
 
 Alternatively, you can use ***sequential style***. Sequential style makes use of Keras' Sequential model, which is a simpler, straight-forward way of creating networks.
 
-    model = keras.models.Sequential()
+```python
+model = keras.models.Sequential()
 
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+```
 
 * We first instantiate a `Sequential` class object.
 * We then add our layers to the model in order, starting from the input layer to the ouput.

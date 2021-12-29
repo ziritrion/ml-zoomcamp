@@ -22,23 +22,27 @@ The gateway only uses CPU computing and needs less resources than the model serv
 
 TensorFlow Serving (`tf-serving`) requires models to be in a specific format.
 
-    import tensorflow as tf
-    from tensorflow import keras
+```python
+import tensorflow as tf
+from tensorflow import keras
 
-    model = keras.models.load_model('original_model.h5')
+model = keras.models.load_model('original_model.h5')
 
-    tf.saved_model.save(model, 'converted_model')
+tf.saved_model.save(model, 'converted_model')
+```
 
 This code loads a Keras model and simply saves it to Tensorflow format rather than Keras.
 
 Tensorflow-formatted models are not single files; they are directories containing a number of files. Here's an example model directory structure:
 
-    converted_model
-    ┣╸ assets
-    ┣╸ saved_model.pb
-    ┗╸ variables
-        ┣╸ variables.data-00000-of-00001
-        ┗╸ variables.index
+```
+converted_model
+┣╸ assets
+┣╸ saved_model.pb
+┗╸ variables
+    ┣╸ variables.data-00000-of-00001
+    ┗╸ variables.index
+```
 
 The `saved_model_cli` utility allows us to inspect the contents of the tf model:
 * `saved_model_cli show --dir converted_model --all`
@@ -68,11 +72,13 @@ TensorFlow-Serving has an official Docker image ready for deployment. By using *
 
 We can run the official tf-serving Docker image with our model mounted in a volume with the following command:
 
-    docker run -it --rm \
-        -p 8500:8500 \
-        -v "$(pwd)/converted_model:/models/converted_model/1" \
-        -e MODEL_NAME="converted_model" \
-        tensorflow/serving:2.7.0
+```sh
+docker run -it --rm \
+    -p 8500:8500 \
+    -v "$(pwd)/converted_model:/models/converted_model/1" \
+    -e MODEL_NAME="converted_model" \
+    tensorflow/serving:2.7.0
+```
 
 * `-it`: short for `-i -t`
     * `-i`: interactive mode
@@ -84,24 +90,26 @@ We can run the official tf-serving Docker image with our model mounted in a volu
     * `-v`: volume. Maps a folder in the host (first half of the path) to a folder within the container (second half).
     * Both folder paths need to be absolute, so relative paths like `"./converted_model"` won't work. We can use a convenient trick with the `pwd` command to print our current folder: `$(pwd)` will be replaced with the current folder of the host machine.
     * The path to the container folder ends with a version number. If no version number is provided the `docker run` command will fail. You can just put `/1` all the time if you have other means of controlling model versions.
-* `-e MODEL_NAME="converted_model"`: environment variable. The container makes use of an environment variable called `MODEL_NAME` which must match the name of our model.
+* `-e MODEL_NAME="converted_model"`: environment variable. The image makes use of an environment variable called `MODEL_NAME` which must match the name of our model.
 * `tensorflow/serving:2.7.0` is the Docker image we will we using.
 
-## Testing the container with Jupyter Notebook
+## Testing the tf-serving container with Jupyter Notebook (gateway)
 
 With the Docker container running, we can now test it from a Jupyter Notebook.
 
-    !pip install grpcio==1.42.0 tensorflow-serving-api==2.7.0
-    !pip install keras-image-helper
+```python
+!pip install grpcio==1.42.0 tensorflow-serving-api==2.7.0
+!pip install keras-image-helper
 
-    import grpc
-    import tensorflow as tf
-    from tensorflow_serving.apis import predict_pb2
-    from tensorflow_serving.apis import prediction_service_pb2_grpc
+import grpc
+import tensorflow as tf
+from tensorflow_serving.apis import predict_pb2
+from tensorflow_serving.apis import prediction_service_pb2_grpc
 
-    host = ' localhost:8500'
-    channel = grpc.insecure_channel(host)
-    stub = prediction_service_pb2_grpc.PredictionServiceStub(channel)
+host = 'localhost:8500'
+channel = grpc.insecure_channel(host)
+stub = prediction_service_pb2_grpc.PredictionServiceStub(channel)
+```
 
 tf-serving makes use of gRPC, a framework for connecting services in and across datacenters. gRPC uses _Protocol Buffers_ (AKA ***Protobuf***) for formatting data, a kind of binary encoding which is faster and more efficient than JSON.
 
@@ -109,75 +117,266 @@ gRPC can establish both insecure and secure communication channels. Secure chann
 
 The _stub_ is our interface with the tf-serving in order to make inference with our model. It needs a channel as a parameter to establish the communication. 
 
-    from keras_image_helper import create_preprocessor
+```python
+from keras_image_helper import create_preprocessor
 
-    preprocessor = create_preprocessor('xception', target_size=(299, 299))
-    url = 'http://bit.ly/mlbookcamp-pants'
-    X = preprocessor.from_url(url)
+preprocessor = create_preprocessor('xception', target_size=(299, 299))
+url = 'http://bit.ly/mlbookcamp-pants'
+X = preprocessor.from_url(url)
+```
 
 This is the same kind of code seen in [lesson 9](09_serverless.md) for transforming the image into a numpy array that our model can process.
 
-    def np_to_protobuf(data):
-        return tf.make_tensor_proto(data, shape=data.shape)
+```python
+def np_to_protobuf(data):
+    return tf.make_tensor_proto(data, shape=data.shape)
 
-    pb_request = predict_pb2.PredictRequest()
-    pb_request.model_spec.name = 'converted_model'
-    pb_request.model_spec.signature_name = 'serving_default'
-    pb_request.inputs['input_8'].CopyFrom(np_to_protobuf(X))
+pb_request = predict_pb2.PredictRequest()
+pb_request.model_spec.name = 'converted_model'
+pb_request.model_spec.signature_name = 'serving_default'
+pb_request.inputs['input_8'].CopyFrom(np_to_protobuf(X))
+```
 
 We can now set up our request to our model by instancing a Protobuf request object and defining its model name, the model's signature name that we saw before and its input.
 
 For the input, note that we make use of the input name that we found in the signature. We also convert the numpy array of our image to Protobuf format and copy it to the request object.
 
-    pb_response = stub.Predict(pb_request, timeout=20.0)
+```python
+pb_response = stub.Predict(pb_request, timeout=20.0)
 
-    pb_response.outputs['dense_7'].float_val
+pb_response.outputs['dense_7'].float_val
+```
 
 Inference is done with the stub's `Predict()` method. We pass out request object as a parameter and define a timeout as well.
 
 The `Predict()` method returns a Protobuf response object. We can access our predictions with the name of the output that we found in the signature definition. `float_val` returns the predictions as a regular Python list, so there is no need to do additional conversions.
 
-    classes = [
-        'dress',
-        'hat',
-        #...
-        'pants'
-    ]
+```python
+classes = [
+    'dress',
+    'hat',
+    #...
+    'pants'
+]
 
-    dict(zip(classes, preds))
+dict(zip(classes, preds))
+```
 
 This code is just a convenience to tag each prediction value to the class they belong to.
 
 Incidentally, this Jupyter Notebook code will be the basis for our gateway Flask app.
 
-# Creating a pre-processing service
+# Creating a pre-processing service (gateway)
 
 Remember that you can export a Jupyter Notebook to a Python script with the following command:
 
-    jupyter nbconvert --to script notebook.ipynb
+```sh
+jupyter nbconvert --to script notebook.ipynb
+```
 
 This command will output a `.py` file with the same name as the notebook.
 
 We can rename the script to `gateway.py`, clean it up, organize the code in methods and add a `if __name__ == '__main__'` statement in order to convert the script to a Flask app.
 
->Note: a Flask cheatsheet is available [in this link](https://gist.github.com/ziritrion/9b80e47956adc0f20ecce209d494cd0a)
+>Note: a Flask cheatsheet is available [in this gist](https://gist.github.com/ziritrion/9b80e47956adc0f20ecce209d494cd0a)
 
 There is one issue: in the notebook we defined the following function:
 
-    def np_to_protobuf(data):
-        return tf.make_tensor_proto(data, shape=data.shape)
+```python
+def np_to_protobuf(data):
+    return tf.make_tensor_proto(data, shape=data.shape)
+```
 
 The `make_tensor_proto()` method is a TensorFlow method and TensorFlow is a huge library about 2GB in size. A smaller `tensorflow-cpu` library exists but it still is over 400MB in size.
 
 Since we only need to use that particular method, we can instead make use of a separate [`tensorflow-protobuf`](https://github.com/alexeygrigorev/tensorflow-protobuf) package which is available on pip.
 
-    !pip install tensorflow-protobuf==2.7.0
+```python
+!pip install tensorflow-protobuf==2.7.0
+```
 
 The [GitHub page for `tensorflow-protobuf`](https://github.com/alexeygrigorev/tensorflow-protobuf) contains info on how to replace the `make_tensor_proto()` method.
 
 Since the additional code is wordy, it would be convenient to define the `np_to_protobuf()` method on a separate `proto.py` script and then import it to the gateway app with `from proto import np_to_protobuf`.
 
 # Running everything locally with Docker-compose
+
+Now that we've created our gateway, it's time to dockerize it and run both the model and gateway concurrently locally.
+
+## Preparing the images
+
+### Model image
+
+[The `docker run` command we used for the tf-serving container](#running-a-container-with-a-tf-serving-model) is very long. If the volume and environment variable won't change often, we can create a new Dockerfile specifying them for easier deployment.
+
+```dockerfile
+FROM tensorflow/serving:2.7.0
+
+COPY converted_model /models/converted_model/1
+ENV MODEL_NAME="converted_model"
+```
+
+This dockerfile will copy the model to the image.
+
+Asuming we name this dockerfile as `image-model.dockerfile`, we can build it with the following command:
+
+```sh
+docker build -t zoomcamp-10-model:v1 -f image-model.dockerfile .
+```
+
+>Note: check the [Docker cheatsheet](https://gist.github.com/ziritrion/1842c8a4c4851602a8733bba19ab6050#docker) for a `docker build` command refresher
+
+We can now run this new image like this:
+
+```sh
+docker run -it --rm \
+    -p 8500:8500 \
+    zoomcamp-10-model:v1
+```
+
+With this new image running, it'd be a good idea to check whether or not the gateway can connect to it by running the gateway notebook we defined previously.
+
+### Gateway image
+
+The dockerfile for the gateway will have to include the dependency management files, the gateway script (as well as the `proto.py` script if you have one) and will have to define an entrypoint using a WSGI HTTP server such as `gunicorn`.
+
+Here's an example `image-gateway.dockerfile` using `pipenv` for dependency management:
+
+```dockerfile
+FROM python:3.8.12-slim
+
+RUN pip install pipenv
+
+WORKDIR /app
+
+COPY ["Pipfile", "Pipfile.lock", "./"]
+
+RUN pipenv install --system --deploy
+
+COPY ["gateway.py", "proto.py". "./"]
+
+EXPOSE 9696
+
+ENTRYPOINT ["gunicorn", "--bind=0.0.0.0:9696", "gateway:app"]
+```
+
+Build the dockerfile like this:
+
+```sh
+docker build -t zoomcamp-10-gateway:v1 -f image-gateway.dockerfile .
+```
+
+And now run it:
+
+```sh
+docker run -it --rm \
+    -p 9696:9696 \
+    zoomcamp-10-gateway:v1
+```
+
+## Testing the images
+
+With both images running, we can now test them with a simple script:
+
+```python
+import requests
+
+url = 'http://localhost:9696/predict'
+
+data = {'url': 'http://bit.ly/mlbookcamp-pants'}
+
+result = requests.post(url, json=data).json()
+print(result)
+```
+
+However, this script will fail. If we check the Docker logs for the gateway container, you'll see a `status = StatusCode.UNAVAILABLE` error along with `details = "failed to connect to all addresses"`. In other words: the gateway service is trying to reach the model service but fails to do so.
+
+## Connecting Docker containers / `docker-compose`
+
+The reason that the test script fails is because the gateway service is trying to connect to port 8500 to reach the model service in localhost (which is actually the container itself), but the port 8500 inside the gateway service container isn't connected to anything. Both containers are connected to the host machine, but since the containers are not connected bewteen them, they are effectively isolated from each other, as the image below shows.
+
+![connecting containers](images/10_02.png)
+
+In order to fix this issue, both containers must be ***in the same network***. Placing both containers in a (virtual) network will allow them to connect to each other, thus allowing our test script to run successfully.
+
+![container network](images/10_03.png)
+
+We can create this network with the `docker` command; however, it's a very tedious process. We can use the `docker-compose` command instead, which is used to run multi-container Docker applications and simplifies connecting different containers between them.
+
+Instructions to install `docker-compose` [are available here](https://docs.docker.com/compose/install/).
+
+## Running and testing the final app
+
+`docker-compose` makes use of `yaml` files to define multi-container applications. The default file that `docker-compose` looks for is called `docker-compose.yaml`, similar to how `docker` looks for the default `Dockerfile` file.
+
+The file defines which containers we should run and a few additional settings; `docker-compose` takes care of setting up the virtual network and connect the containers.
+
+However, before we define the `docker-compose.yaml` file, we need to modify the gateway slightly. Currently, the connection to the model service is hardcoded as `host = 'localhost:8500'`; we can use environment variables instead to get the host address.
+
+```python
+# in gateway.py
+# after all the library imports
+import os
+
+host = os.getenv('TF_SERVING_HOST', 'localhost:8500')
+# rest of the code below
+```
+
+* The `os` module exposes operating system functionality, including environment variables.
+* `os.getenv()` looks for the environment variable in the first parameter (`TF_SERVING_HOST` in our case). If the varaible cannot be found, the default value is the second parameter (the previously hardcoded `localhost:8500`, useful for local testing).
+
+We now need to rebuild the gateway container.
+
+```sh
+docker build -t zoomcamp-10-gateway:v2 -f image-gateway.dockerfile .
+```
+> Notice the updated tag! This is now gateway image version 2.
+
+Finally, here's what out `docker-compose.yaml` file would look like:
+
+```yaml
+version: "3.9"
+services:
+    model-service:
+        image: zoomcamp-10-model:v1
+    gateway:
+        image: zoomcamp-10-gateway:v2
+        environment:
+            - TF_SERVING_HOST=model-service:8500
+        ports:
+            - "9696:9696"
+```
+
+* The `version` is just something required by the `docker-compose` standard in order to know which Docker engine version to use.
+* Our app has 2 components: the gateway and the model. We define these 2 components inside `services`:
+    * `model-service` is the name we've defined for our tf-serving container.
+    * `gateway` is the name for the gateway container.
+* No additional configuration is required for `model-service` other than the image name.
+* `gateway` requires the following info:
+    * `environment` is the environment variable that we define in order for the gateway to find the model.
+    * `ports` is the port mapping necessary to connect to the Docker app from the outside.
+* `docker-compose` makes use of the _service names_ that we define in order to connect the the containers. The gateway needs to connect to the model; we named the model container as `model-service`, thus we use this name as the value for the environment variable that we pass to the gateway, allowing the gateway to find the model inside the network that `docker-compose` creates.
+
+We can now run the app like this:
+
+```sh
+docker-compose up
+```
+> Important: this command will only work when run from within the same directory where the `docker-compose.yaml` file is located.
+
+Alternatively, we can also run in detached mode:
+
+```sh
+docker-compose up -d
+```
+
+This will escape the docker-compose output and return us to the terminal prompt. We can shut down the app with:
+
+```sh
+docker-compose down
+```
+
+With the app running, we should now be able to run the test script successfully.
 
 # Intro to Kubernetes
 

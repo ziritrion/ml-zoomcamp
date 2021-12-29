@@ -41,10 +41,12 @@ If a feature consists of text (for example, appartment descriptions, reviews, et
 
 Scikit-learn has tools that allows us to do exactly this:
 
-    from sklearn.feature_extraction.text import CountVectorizer
+```python
+from sklearn.feature_extraction.text import CountVectorizer
 
-    cv = CountVectorizer()
-    cv.fit(feature)
+cv = CountVectorizer()
+cv.fit(feature)
+```
 
 `CountVectorizer` will count all the words in the feature and create vectors with as many dimensions as words. A sentence is codified with word counts, thus allowing us to work with the feature.
 
@@ -65,20 +67,27 @@ Instead, we can follow these steps to get rid of some categories and make a more
     * `my_features = 'feature_1=' + df.feature_1 + ' ' + 'feature_2=' + df.feature_2`
     * This will output a single string with all of the contents of the chosen features in the `df` dataframe.
 1. Train a `CountVectorizer` instance.
-    *       from sklearn.feature_extraction.text import CountVectorizer
+    ```python
+    from sklearn.feature_extraction.text import CountVectorizer
 
-            cv_features = CountVectorizer(token_pattern='\S+', min_df=50, dtype='int32')
-            cv_features.fit(my_features)
+    cv_features = CountVectorizer(token_pattern='\S+', min_df=50, dtype='int32')
+    cv_features.fit(my_features)
+    ```
     * `token_pattern` allows you to define a ***regular expression*** to parse the string. Lowercase `\s` means whitespace, uppercase `\S` is everything that is not a whitespace; `+` means that at least 1 instance of the preceding character or token must occur; therefore, this regular expression will parse any collection of consecutive non-whitespace characters as an entity, and whitespaces will be used as the separation between entities.
     * `min_df` stands for _minimum document frequency_. `CountVectorizer` will only take into account the categories that appear at least as many times as the amount specified in this parameter (in our example, 50). All other categories with counts smaller than the specified amount will be discarded.
     * The default type is `int64`; we switch to `int32` because the generated vectors will be made of zeros and ones, so we can cut the memory usage by half by changing the type without losing any info.
     * `cv_features.get_feature_names()` should return a list similar to this:
+    ```python
+    ['feature_1=type_1',
+    'feature_1=type_2',
+    'feature_2=type_A',
+    'feature_2=type_B']
+    ```
+1. Convert the string to vectors.
+    ```python
+    X = cv_features.transform(my_features)
+    ```
 
-            ['feature_1=type_1',
-            'feature_1=type_2',
-            'feature_2=type_A',
-            'feature_2=type_B']
-1. `X = cv_features.transform(my_features)`
     * This will convert your string to vectors, as shown in the [Working with text section](#working-with-text).
 
 ## Joining processed text and categorical features
@@ -87,24 +96,26 @@ After using `CountVectorizer`, it's likely that you'll want to rejoin the featur
 
 Here's a code snippet that shows how to do this.
 
-        # Categorical features
-        cv_categories= CountVectorizer(token_pattern='\S+', min_df=50, dtype='int32')
-        cv_categories.fit(my_features)
+```python
+# Categorical features
+cv_categories= CountVectorizer(token_pattern='\S+', min_df=50, dtype='int32')
+cv_categories.fit(my_features)
 
-        # Text features
-        cv_texts = CountVectorizer()
-        cv_texts.fit(my_text_features)
+# Text features
+cv_texts = CountVectorizer()
+cv_texts.fit(my_text_features)
 
-        # Creating the feature matrices
-        X_categories = cv_categories.transform(my_features)
-        X_texts = cv_texts.transform(my_text_features)
+# Creating the feature matrices
+X_categories = cv_categories.transform(my_features)
+X_texts = cv_texts.transform(my_text_features)
 
-        # Stacking the 2 feature matrices together into one
-        import scipy
-        X = scipy.sparse.hstack([X_categories, X_texts])
+# Stacking the 2 feature matrices together into one
+import scipy
+X = scipy.sparse.hstack([X_categories, X_texts])
 
-        # Optional matrix reformatting
-        X = X.tocsr()
+# Optional matrix reformatting
+X = X.tocsr()
+```
 
 * The matrices created by the `transform()` function are ***sparse matrices*** (matrices mostly composed of zeroes). Because sparse matrices take a lot of memory and most of the spaces are empty, scikit-learn uses a special format called _Compressed Sparse Row Format_ (CSR), which compresses the matrices to make them much smaller. Using this example code, you can check this by inputiing `X_texts` in your notebook.
 * SciPy is a library for scientific computing which is built on top of NumPy arrays. We use `scipy.sparse.hstack()` for stacking sparse matrices; using Numpy's `np.hstack()` would create an array with 2 sparse matrix objects, which isn't what we want nor need.
@@ -127,25 +138,27 @@ For our example use case (preprocessing of different types of features), we will
 
 In code form:
 
-    from sklearn.compose import ColumnTransformer
-    from sklearn.feature_extraction.text import CountVectorizer
-    from sklearn.preprocessing import OneHotEncoder
+```python
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import OneHotEncoder
 
-    # Data import and cleanup code is omitted
+# Data import and cleanup code is omitted
 
-    # transformations array
-    transformations = [
-        ('numerical', 'passthrough', ['num_feat1', 'num_feat2', 'num_feat3']),
-        ('categories', OneHotEncoder(dtype='int32'), ['cat_feat1', 'cat_feat2', 'cat_feat_3']),
-        ('name', CountVectorizer(min_df=100, dtype='int32'), 'name')
-    ]
+# transformations array
+transformations = [
+    ('numerical', 'passthrough', ['num_feat1', 'num_feat2', 'num_feat3']),
+    ('categories', OneHotEncoder(dtype='int32'), ['cat_feat1', 'cat_feat2', 'cat_feat_3']),
+    ('name', CountVectorizer(min_df=100, dtype='int32'), 'name')
+]
 
-    transformer = ColumnTransformer(transformations, reminder='drop')
+transformer = ColumnTransformer(transformations, reminder='drop')
 
-    transformer.fit(df_train)
+transformer.fit(df_train)
 
-    X = transformer.transform(df_train)
-    y = df_train.target_feature.values
+X = transformer.transform(df_train)
+y = df_train.target_feature.values
+```
 
 * In this example, `num_feat*` are numerical features that won't need additional preprocessing, `cat_feat*` are categorical features that we will one-hot encode and `name` is a text feature that we want to codify with `CountVectorizer`.
 * `transformations` is a list of tuples. Each tuple contains a name (for the transformer), a transformation we want to apply, and a list of features that will receive such transformation.
@@ -163,25 +176,27 @@ We don't actually have to train our transformer and generate our feature matrix 
 
 In code form:
 
-    from sklearn.pipeline import Pipeline
-    from sklearn.linear_model import LinearRegression
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
 
-    # transformations array
-    transformations = [
-        ('numerical', 'passthrough', ['num_feat1', 'num_feat2', 'num_feat3']),
-        ('categories', OneHotEncoder(dtype='int32'), ['cat_feat1', 'cat_feat2', 'cat_feat_3']),
-        ('name', CountVectorizer(min_df=100, dtype='int32'), 'name')
-    ]
+# transformations array
+transformations = [
+    ('numerical', 'passthrough', ['num_feat1', 'num_feat2', 'num_feat3']),
+    ('categories', OneHotEncoder(dtype='int32'), ['cat_feat1', 'cat_feat2', 'cat_feat_3']),
+    ('name', CountVectorizer(min_df=100, dtype='int32'), 'name')
+]
 
-    tranformer = ColumnTransformer(transformations, remainder='drop')
+tranformer = ColumnTransformer(transformations, remainder='drop')
 
-    pipeline = Pipeline([
-        ('transformer', transformer),
-        ('lr', LinearRegression())
-    ])
+pipeline = Pipeline([
+    ('transformer', transformer),
+    ('lr', LinearRegression())
+])
 
-    pipeline.fit(df_train, df_train.target_feature.values)
-    pipeline.predict(df_val)
+pipeline.fit(df_train, df_train.target_feature.values)
+pipeline.predict(df_val)
+```
 
 * `pipeline` is an object composed of a list of tuples. Each tuple contains a name for the pipeline and the object it represents; in our case, the first element is our transformer and the second one is the model we will use for our predictions. The pipeline will then run each part consecutively.
 * We train and predict using our regular training and validation dataframes.
@@ -197,19 +212,21 @@ Scikit-learn provides `TransformerMixin`, which gives us the necessary methods t
 
 The example custom transformer will create a custom string just like in the `CountVectorizer` example.
 
-    from sklearn.base import TransformerMixin
+```python
+from sklearn.base import TransformerMixin
 
-    class ConcatenatingTranformer(TransformerMixin):
-    
-        def fit(self, X, y=None):
-            return self
+class ConcatenatingTranformer(TransformerMixin):
 
-        def transform(self, X):
-            columns = list(X.columns)           
-            res = ''            
-            for c in columns:
-                res = res + ' ' + c + '=' + X[c]
-            return res.str.strip()
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        columns = list(X.columns)           
+        res = ''            
+        for c in columns:
+            res = res + ' ' + c + '=' + X[c]
+        return res.str.strip()
+```
 
 * We create a new class, `ConcatenatingTransformer` which extends `TransformerMixin`.
 * A class that extends `TransformerMixin` needs to implement 2 methods: `fit` and `transform`.
@@ -221,15 +238,17 @@ The example custom transformer will create a custom string just like in the `Cou
 
 With our custom class in place, we can now instantiate it and add it to a pipeline that will process the features we want.
 
-    ct = ConcatenatingTranformer()
+```python
+ct = ConcatenatingTranformer()
 
-    p2 = Pipeline([
-        ('concatenate', ConcatenatingTranformer()),
-        ('vectorize', CountVectorizer(token_pattern='\S+', min_df=100))
-    ])
+p2 = Pipeline([
+    ('concatenate', ConcatenatingTranformer()),
+    ('vectorize', CountVectorizer(token_pattern='\S+', min_df=100))
+])
 
-    # Optional
-    X = p2.fit_transform(df[['cat_feat1', 'cat_feat2', 'cat_feat_3']])
+# Optional
+X = p2.fit_transform(df[['cat_feat1', 'cat_feat2', 'cat_feat_3']])
+```
 
 * We first apply our custom transformation and then we reduce the feature size and vectorize the categories.
 * Remember that `CountVectorizer` needs a regex in order to tokenize each "word" of the single string we pass to it, and we need a minimum count value in order to discard any features with a smaller count in the dataframe.
@@ -239,25 +258,27 @@ With our custom class in place, we can now instantiate it and add it to a pipeli
 
 We can now integrate our custom transformation pipeline with our regular pipeline:
 
-    # transformations array
-    transformations = [
-        ('numerical', 'passthrough', ['num_feat1', 'num_feat2', 'num_feat3']),
-        ('categories', Pipeline([
-                    ('concatenate', ConcatenatingTranformer()),
-                    ('vectorize', CountVectorizer(token_pattern='\S+', min_df=100))
-        ]), ['cat_feat1', 'cat_feat2', 'cat_feat_3']),
-        ('name', CountVectorizer(min_df=100, dtype='int32'), 'name')
-    ]
+```python
+# transformations array
+transformations = [
+    ('numerical', 'passthrough', ['num_feat1', 'num_feat2', 'num_feat3']),
+    ('categories', Pipeline([
+                ('concatenate', ConcatenatingTranformer()),
+                ('vectorize', CountVectorizer(token_pattern='\S+', min_df=100))
+    ]), ['cat_feat1', 'cat_feat2', 'cat_feat_3']),
+    ('name', CountVectorizer(min_df=100, dtype='int32'), 'name')
+]
 
-    tranformer = ColumnTransformer(transformations, remainder='drop')
+tranformer = ColumnTransformer(transformations, remainder='drop')
 
-    pipeline = Pipeline([
-        ('transformer', transformer),
-        ('lr', LinearRegression())
-    ])
+pipeline = Pipeline([
+    ('transformer', transformer),
+    ('lr', LinearRegression())
+])
 
-    pipeline.fit(df_train, df_train.target_feature.values)
-    pipeline.predict(df_val)
+pipeline.fit(df_train, df_train.target_feature.values)
+pipeline.predict(df_val)
+```
 
 Pipelines can be exported to files with `pickle`, which makes it useful for deploying purposes.
 
@@ -267,19 +288,23 @@ Your dataset may contain certain features which have very uneven distributions. 
 
 In order to avoid these unbalanced splits, `train_test_split()` contains a special parameter, `stratify`, which takes a feature as input and makes sure that the distribution for that feature will be respected in all splits.
 
-    df_train, df_test = train_test_split(df, random_state=1, test_size=0.2, stratify=df.my_weird_feature)
+```python
+df_train, df_test = train_test_split(df, random_state=1, test_size=0.2, stratify=df.my_weird_feature)
+```
 
 # K-nearest neighbors (k-NN)
 
 The esential idea for **k-nearest neighbors regression** is to look at items close to the item you want to predict and compute the average of the neighbors. For **k-nearest neighbors classification**, the item is classified according to the majority class of its closest items.
 
-    from sklearn-neighbors import KNeighborsRegressor
+```python
+from sklearn-neighbors import KNeighborsRegressor
 
-    knn = KNeighborsRegressor(n_neighbors=5)
+knn = KNeighborsRegressor(n_neighbors=5)
 
-    knn.fit(X_train, y_train)
+knn.fit(X_train, y_train)
 
-    knn.predict(X_val)
+knn.predict(X_val)
+```
 
 * `n_neighbors` defines the amount of neighbors we will look at to compute our result.
 

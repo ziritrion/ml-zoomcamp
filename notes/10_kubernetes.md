@@ -199,7 +199,7 @@ The [GitHub page for `tensorflow-protobuf`](https://github.com/alexeygrigorev/te
 
 Since the additional code is wordy, it would be convenient to define the `np_to_protobuf()` method on a separate `proto.py` script and then import it to the gateway app with `from proto import np_to_protobuf`.
 
-# Running everything locally with Docker-compose
+# Running everything locally with `docker-compose`
 
 Now that we've created our gateway, it's time to dockerize it and run both the model and gateway concurrently locally.
 
@@ -291,7 +291,7 @@ print(result)
 
 However, this script will fail. If we check the Docker logs for the gateway container, you'll see a `status = StatusCode.UNAVAILABLE` error along with `details = "failed to connect to all addresses"`. In other words: the gateway service is trying to reach the model service but fails to do so.
 
-## Connecting Docker containers / `docker-compose`
+## Connecting Docker containers with `docker-compose`
 
 The reason that the test script fails is because the gateway service is trying to connect to port 8500 to reach the model service in localhost (which is actually the container itself), but the port 8500 inside the gateway service container isn't connected to anything. Both containers are connected to the host machine, but since the containers are not connected bewteen them, they are effectively isolated from each other, as the image below shows.
 
@@ -337,25 +337,25 @@ Finally, here's what out `docker-compose.yaml` file would look like:
 ```yaml
 version: "3.9"
 services:
-    model-service:
+    model-server:
         image: zoomcamp-10-model:v1
     gateway:
         image: zoomcamp-10-gateway:v2
         environment:
-            - TF_SERVING_HOST=model-service:8500
+            - TF_SERVING_HOST=model-server:8500
         ports:
             - "9696:9696"
 ```
 
 * The `version` is just something required by the `docker-compose` standard in order to know which Docker engine version to use.
 * Our app has 2 components: the gateway and the model. We define these 2 components inside `services`:
-    * `model-service` is the name we've defined for our tf-serving container.
+    * `model-server` is the name we've defined for our tf-serving container.
     * `gateway` is the name for the gateway container.
-* No additional configuration is required for `model-service` other than the image name.
+* No additional configuration is required for `model-server` other than the image name.
 * `gateway` requires the following info:
     * `environment` is the environment variable that we define in order for the gateway to find the model.
     * `ports` is the port mapping necessary to connect to the Docker app from the outside.
-* `docker-compose` makes use of the _service names_ that we define in order to connect the the containers. The gateway needs to connect to the model; we named the model container as `model-service`, thus we use this name as the value for the environment variable that we pass to the gateway, allowing the gateway to find the model inside the network that `docker-compose` creates.
+* `docker-compose` makes use of the _service names_ that we define in order to connect the the containers. The gateway needs to connect to the model; we named the model container as `model-server`, thus we use this name as the value for the environment variable that we pass to the gateway, allowing the gateway to find the model inside the network that `docker-compose` creates.
 
 We can now run the app like this:
 
@@ -379,6 +379,24 @@ docker-compose down
 With the app running, we should now be able to run the test script successfully.
 
 # Intro to Kubernetes
+
+As mentioned in the beginning of the lesson, Kubernetes is a technology that allows us to automatically deploy, scale and operate containers. In other words, it allows us to deploy the app we've created locally to the cloud and manage it.
+
+A Kubernetes ***cluster*** contains ***nodes***, and nodes contain ***pods***. Pods are grouped in ***deployments*** along different nodes. Deployments are accessed through ***services***. The ***ingress*** is the entry point to the cluster.
+
+![kubernetes architecture](images/10_04.png)
+
+* A _node_ is a _server_ such as a local computer or an EC2 instance.
+* A _pod_ is a container which runs a specific image with specific parameters.
+* A _deployment_ is a group of pods all running the same image and config. The pods may be distributed in different nodes.
+* A _service_ is a sort of entrypoint that serves as a middleman between the user and the deployment: it receives the requests from the user and routes it to an available pod within the deployment, and then serves the reply to the user. The user may be a pod from a different deployment or an external application; therefore services may be **external** or **internal**, depending on whether the deployment needs to be accessed externally or it's an internal component of a bigger app.
+    * External services are called ***load balancers***.
+    * Internal services are called ***cluster IP's***.
+* The _ingress_ is the resource that exposes HTTP/HTTPS routes from outside the cluster to services within the cluster.
+
+Kubernetes can also manage deployments by scaling up (starting pods) and down (removing pods) as the user load increases or decreases. This is handled by the ***HPA*** (_Horizontal Pod Autoscaler_).
+
+>Note: We will not be dealing with neither HPA nor ingress in this course.
 
 # Deploying a simple service to Kubernetes
 

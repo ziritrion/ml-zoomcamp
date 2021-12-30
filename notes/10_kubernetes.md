@@ -386,12 +386,13 @@ A Kubernetes ***cluster*** contains ***nodes***, and nodes contain ***pods***. P
 
 ![kubernetes architecture](images/10_04.png)
 
-* A _node_ is a _server_ such as a local computer or an EC2 instance.
-* A _pod_ is a container which runs a specific image with specific parameters.
+* A _cluster_ is a Kubernetes deployment.
+* A _node_ is a _server_ such as a local computer or an EC2 instance. Every cluster contains at least one node.
+* A _pod_ is a group of one or more containers with shared storage and network resources, as well as a specification for how to run the containers.
 * A _deployment_ is a group of pods all running the same image and config. The pods may be distributed in different nodes.
 * A _service_ is a sort of entrypoint that serves as a middleman between the user and the deployment: it receives the requests from the user and routes it to an available pod within the deployment, and then serves the reply to the user. The user may be a pod from a different deployment or an external application; therefore services may be **external** or **internal**, depending on whether the deployment needs to be accessed externally or it's an internal component of a bigger app.
     * External services are called ***load balancers***.
-    * Internal services are called ***cluster IP's***.
+    * Internal services are called ***ClusterIP's***.
 * The _ingress_ is the resource that exposes HTTP/HTTPS routes from outside the cluster to services within the cluster.
 
 Kubernetes can also manage deployments by scaling up (starting pods) and down (removing pods) as the user load increases or decreases. This is handled by the ***HPA*** (_Horizontal Pod Autoscaler_).
@@ -400,8 +401,236 @@ Kubernetes can also manage deployments by scaling up (starting pods) and down (r
 
 # Deploying a simple service to Kubernetes
 
+Before deploying our docker-compose app, we will deploy a simpler app with Kubernetes. We will need 2 additional tools:
+* `Kind`: this tool allows you to create a local Kubernetes cluster in your local computer.
+* `kubectl` (pronounced _coob-control_): the Kubernetes command-line tool, used to run commands against Kubernetes clusters.
+
+## Creating a simple ping application in Flask
+
+For this example we will create a very basic Flask app that returns `PONG` when receiving a GET request on the `/ping` route.
+
+```python
+from flask import Flask
+
+app = Flask('ping')
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    return "PONG"
+
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=9696)
+```
+
+>Note: your Python environment will need both `flask` and `gunicorn` to run this app.
+
+We will now create the Dockerfile for this ping app.
+
+```dockerfile
+FROM python:3.8.12-slim
+
+RUN pip install pipenv
+
+WORKDIR /app
+
+COPY ["Pipfile", "Pipfile.lock", "./"]
+
+RUN pipenv install --system --deploy
+
+COPY "ping.py" .
+
+EXPOSE 9696
+
+ENTRYPOINT ["gunicorn", "--bind=0.0.0.0:9696", "ping:app"]
+```
+
+Build the image:
+
+```sh
+docker build -t ping:v1 .
+```
+
+>**IMPORTANT**: `docker build` will automatically apply the tag `latest` to the image when no tag is specified. In the following sections we will use Kind, a tool that won't accept the `latest` tag for images, so we need to tag our image with a tag of our liking, such as `v1` in this example.
+
+Run the image:
+
+```sh
+docker run -it --rm -p 9696:9696 ping:v1
+```
+
+Finally, test it with `curl` on a terminal:
+
+```sh
+curl localhost:9696/ping
+```
+
+You should see `PONG` as the response from the app in the terminal.
+
+## Installing kubectl
+
+`kubectl` is the Kubernetes command-line tool used to run commands against Kubernetes clusters.
+
+Installation instructions for all major platforms are available in the [official Kubernetes website](https://kubernetes.io/docs/tasks/tools/).
+
+>Note: Docker Desktop for both Windows and MacOS already includes `kubectl`.
+
+The goal of the lesson is to deploy our app to EKS, AWS' Kubernetes service. AWS also distributes `kubectl`; installation instructions from AWS [can be found here](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html). According to the EKS website, the Amazon distributed `kubectl` binaries are identical to the official ones.
+
+## Setting up a local Kubernetes cluster with Kind
+
+Kind is a tool that will allow us to create a local Kubernetes cluster in our computer for learning and developing.
+
+Installation instructions are available [on the official website](https://kind.sigs.k8s.io/docs/user/quick-start/).
+
+Once Kind is installed, create a cluster with the following command (it may take a few minutes):
+
+```sh
+kind create cluster
+```
+
+Once the cluster is created, in order to access it with `kubectl` we need to provide the kind cluster context to it. You may do so with the following command:
+
+```sh
+kubectl cluster-info --context kind-kind
+```
+
+You may know use `kubectl` to access the cluster. Try the following commands:
+
+*   ```sh
+    kubectl get service
+    ```
+    * It should return a single entry named `kubernetes`.
+*   ```sh
+    kubectl get pod
+    ```
+    * It should return `No resources found in default namespace.`
+*   ```sh
+    kubectl get deployment
+    ```
+    * It should return `No resources found in default namespace.`
+*   ```sh
+    docker ps
+    ```
+    * It should show a container running the `kindest` image, along with any other containers you might be running.
+
+Kind makes use of Docker to simulate a cluster, which is why `docker ps` shows a container.
+
+## Creating a deployment
+
+Deployments in Kubernetes are defined with YAML files. Here's an example `deployment.yaml` file for our ping app:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: ping-deployment
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: ping
+    template:
+        metadata:
+            labels:
+                app: ping
+        spec:
+            containers:
+            -   name: ping-pod
+                image: ping:v1
+                resources:
+                    limits:
+                        memory: "128Mi"
+                        cpu: "500m"
+                ports:
+                -   containerPort: 9696
+```
+
+* The `.metadata.name` field contains the name of the deployment. In our example, `ping-deployment`.
+* The `.spec.replicas` field states how many pods should be replicated in the deployment. In our example, we will only deploy 1 pod.
+* The `.spec.selector` field defines how the deployment finds which pods to manage. There are a few different selection rules available.
+    * In our example, the `.spec.selector.matchLabels` field selects a label defined in the _pod template_ ( `app: ping` ).
+* The `template` field contains a number of sub-fields:
+    * The `.metadata.labels` field states how pods are labeled; .in our example, `app: ping` .
+    * The `.template.spec` field is the _pod template's specification_, which states that the pods run a single container ( `ping-pod` ) running the `ping:v1` image we created before.
+        * The `resources` field specifies how many resources should the pods make use of. In this example, each pod will take a maximum of 128 MiB of RAM memory and will take _"500 miliCPU's"_ of CPU time; in other words, half of a CPU core's available time.
+
+Before we run the deployment, we need to _load_ our image into our cluster nodes.
+
+```sh
+kind load docker-image ping:v1
+```
+
+We can now _apply_ our `deployment.yaml` file to our cluster:
+
+```sh
+kubectl apply -f deployment.yaml
+```
+
+>Note: you can check the status of your cluster by using the `kubectl get deployment` and `kubectl get pod` commands we saw before. In case of errors, you can get additional info from pods by using the `kubectl describe pod pod-name-taken-from-get-pod | less` command.
+
+Finally, we test that the deployment is working as intended. We can do so with ***port forwarding*** in order to access the pod.
+
+```sh
+kubectl port-forward pod-name-taken-from-get-pod 9696:9696
+```
+
+This command will temporarily forward the port of the pod so that we can access it from outside the cluster. You can stop the port forwarding by pressing `Ctrl+C` on your keyboard.
+
+With the port forwarding running, run the same `curl` command from before:
+
+```sh
+curl localhost:9696/ping
+```
+
+You should get a `PONG` response from the cluster.
+
+## Creating a service
+
+We now need to offer permanent access from outside the cluster with a service. Services are also declared with YAML files.
+
+Here's an example `service.yaml` file for our ping app:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+    name: ping-service
+spec:
+    type: LoadBalancer
+    selector:
+        app: ping
+    ports:
+    -   port: 80
+        targetPort: 9696
+```
+
+* The service will be named `ping-service` as stated on the `.metadata.name` field.
+* The `ping-service` service will target the port 9696 of any pod with the `app=ping` label.
+* The service will be external, AKA of `LoadBalancer` type. If this field is not specified, the default type would be `ClusterIP` (internal service).
+* We can access the service on port 80.
+
+With the `service.yaml` file created, we can now deploy it:
+
+```sh
+kubectl apply -f service.yaml
+```
+
+You can now check the state of the service with `kubectl get service` and test it with the `curl` command.
+
+* ***IMPORTANT***: when checking the service status, you will most likely find that the LoadBalancer service we created has `<pending>` as its external IP value. We did not configure our cluster to assign IP's to LoadBalancers, so you will have to make use of port forwarding for testing.
+*   ```sh
+    kubectl port-forward service/ping-service 8080:80
+    ```
+* We use 8080:80 because port 80 locally is reserved for HTTP and would probably require root access to be changed, so we use port 8080 for the local port
+*   ```sh
+    curl localhost:8080/ping
+    ```
+
 # Deploying TensorFlow models to Kubernetes
 
+## Deploying the TF-Serving model
+## Deploying the Gateway
+## Testing the service
 # Deploying to EKS
 
 > Previous: [Serverless Deep Learning](09_serverless.md)

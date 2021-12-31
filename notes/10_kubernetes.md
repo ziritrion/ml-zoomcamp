@@ -568,11 +568,14 @@ kubectl apply -f deployment.yaml
 
 >Note: you can check the status of your cluster by using the `kubectl get deployment` and `kubectl get pod` commands we saw before. In case of errors, you can get additional info from pods by using the `kubectl describe pod pod-name-taken-from-get-pod | less` command.
 
+>Note 2: you can remove a deployment with `kubectl delete -f deployment.yaml`
+
 Finally, we test that the deployment is working as intended. We can do so with ***port forwarding*** in order to access the pod.
 
 ```sh
 kubectl port-forward pod-name-taken-from-get-pod 9696:9696
 ```
+>Note: you will need to use `kubectl get pod` to get the name of the pod for the port forwarding command.
 
 This command will temporarily forward the port of the pod so that we can access it from outside the cluster. You can stop the port forwarding by pressing `Ctrl+C` on your keyboard.
 
@@ -628,9 +631,193 @@ You can now check the state of the service with `kubectl get service` and test i
 
 # Deploying TensorFlow models to Kubernetes
 
+We will now deploy our app to Kubernetes. The main idea is to re-create the `docker-compose.yaml` file from our app in new YAML files for Kubernetes.
 ## Deploying the TF-Serving model
+
+### TF-Serving model deployment
+
+Let's begin by creating a new `model-deployment.yaml` file.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: tf-serving-model
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: tf-serving-model
+    template:
+        metadata:
+            labels:
+                app: tf-serving-model
+        spec:
+            containers:
+            -   name: tf-serving-model
+                image: zoomcamp-10-model:v1
+                resources:
+                    limits:
+                        memory: "512Mi"
+                        cpu: "1"
+                ports:
+                -   containerPort: 8500
+```
+
+* Note that we're using the same model image we created for `docker-compose`.
+* We're increasing the reources because the model requires them.
+
+Remember that we need to load the image to Kind before we can use it:
+
+```sh
+kind load docker-image zoomcamp-10-model:v1
+```
+
+We can now apply the deployment to our cluster:
+
+```sh
+kubectl apply -f model-deployment.yaml
+```
+
+Finally, we will test it by forwarding the pod's port and using the local gateway script.
+
+```sh
+kubectl port-forward tf-serving-model-name-from-get-pod 8500:8500
+# call the gateway script after the command above from another terminal
+```
+
+### TF-Serving model deployment service
+
+After we confirm that the deployment works, we need to create the service for the deployment. Here's the `model-service.yaml` file for it:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+    name: tf-serving-model
+spec:
+    selector:
+        app: tf-serving-model
+    ports:
+    -   port: 8500
+        targetPort: 8500
+```
+* Note that we do not specify a service type. Therefore, this service will be the default internal service type, `ClusterIP`.
+
+Now apply it:
+
+```sh
+kubectl apply -f model-service.yaml
+```
+
+And test it with port-forwarding and the local gateway script:
+
+```sh
+kubectl port-forward service/tf-serving-model 8500:8500
+# call the gateway script after the command above from another terminal
+```
+>Note: Due to the use of gRPC, you may see some errors in the port forwarding terminal logs even though the service should work as expected.
+
 ## Deploying the Gateway
-## Testing the service
+
+### Gateway deployment
+
+We now repeat the same steps we did for the model, but this time for the gateway.
+
+Here's the `gateway-deployment.yaml` file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: gateway
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: gateway
+    template:
+        metadata:
+            labels:
+                app: gateway
+        spec:
+            containers:
+            -   name: gateway
+                image: zoomcamp-10-gateway:v2
+                resources:
+                    limits:
+                        memory: "128Mi"
+                        cpu: "100m"
+                ports:
+                -   containerPort: 9696
+                env:
+                    -   name: TF_SERVING_HOST
+                        value: tf-serving-model.default.svc.cluster.local:8500
+```
+* Kubernetes makes use of ***namespaces*** to isolate group of resources within a cluster. The usage of namespaces falls beyond the scope of this course, but you can learn more about them [in this link](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/).
+    * You can get available namespaces with `kubectl get namespace` . The default namespace name is `default` .
+    * Some Kubernetes resources (such as pods, services, etc) are in a namespace. Low level resources such as nodes are not in any namespace.
+* Remember that the gateway made use of environment variables to find the model service. We need to provide the URL for the service to the `TF_SERVING_MODEL` environment variable.
+* When creating a service, it creates a corresponding DNS entry which follows a specific name format: `<service-name>.<namespace-name>.svc.cluster.local` .
+    * The model service is called `tf-serving-model` and the namespace is `default`; thus, the correct URL for the environment variable will be `tf-serving-model.default.svc.cluster.local:8500`.
+* You can test that the URL of the service is correct by logging into any pod with `kubectl exec -it pod-of-your-choosing -- bash` , then run `telnet tf-serving-model.default.svc.cluster.local 8500` to check that it's connecting properly (you cannot use `curl` in this instance because the model service will reject the connection).
+
+Load the image:
+
+```sh
+kind load docker-image zoomcamp-10-gateway:v2
+```
+
+Apply the deployment:
+
+```sh
+kubectl apply -f gateway-deployment.yaml
+```
+
+And finally test it with port forwarding and the test script from before.
+
+```sh
+kubectl port-forward gateway-pod-name-taken-from-get-pod 9696:9696
+# Now run the test script to test the gateway
+```
+
+### Gateway deployment service
+
+We will now create the `gateway-service.yaml` service file:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+    name: gateway
+spec:
+    type: LoadBalancer
+    selector:
+        app: gateway
+    ports:
+    -   port: 80
+        targetPort: 9696
+```
+* Note that we add the `LoadBalancer` type to the service file.
+
+Apply the service:
+
+```sh
+kubectl apply -f gateway-service.yaml
+```
+
+And finally test it with port forwarding and the test script (check the port that you're accessing in the script!):
+
+```sh
+kubectl port-forward service/gateway 8080:80
+# Now run the test script to test the gateway service
+```
+
+## Extra: gRPC and load balancing
+
+Kubernetes's default load balancing does not work with gRPC. This means that when deploying apps to Kubernetes that make use of gRPC such as our app, all the load ends up going to a single pod out of all of the pods available for the service that uses gRPC.
+
+[This article teaches you how to deal with this issue.](https://kubernetes.io/blog/2018/11/07/grpc-load-balancing-on-kubernetes-without-tears/)
 # Deploying to EKS
 
 > Previous: [Serverless Deep Learning](09_serverless.md)

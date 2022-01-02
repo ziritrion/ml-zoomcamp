@@ -276,7 +276,7 @@ docker run -it --rm \
 
 ## Testing the images
 
-With both images running, we can now test them with a simple script:
+With both images running, we can now test them with a simple `test.py` script:
 
 ```python
 import requests
@@ -337,14 +337,14 @@ Finally, here's what out `docker-compose.yaml` file would look like:
 ```yaml
 version: "3.9"
 services:
-    model-server:
-        image: zoomcamp-10-model:v1
-    gateway:
-        image: zoomcamp-10-gateway:v2
-        environment:
-            - TF_SERVING_HOST=model-server:8500
-        ports:
-            - "9696:9696"
+  model-server:
+    image: zoomcamp-10-model:v1
+  gateway:
+    image: zoomcamp-10-gateway:v2
+    environment:
+      - TF_SERVING_HOST=model-server:8500
+    ports:
+      - "9696:9696"
 ```
 
 * The `version` is just something required by the `docker-compose` standard in order to know which Docker engine version to use.
@@ -402,7 +402,7 @@ Kubernetes can also manage deployments by scaling up (starting pods) and down (r
 # Deploying a simple service to Kubernetes
 
 Before deploying our docker-compose app, we will deploy a simpler app with Kubernetes. We will need 2 additional tools:
-* `Kind`: this tool allows you to create a local Kubernetes cluster in your local computer.
+* `Kind` (Kubernetes in Docker): this tool allows you to create a local Kubernetes cluster in your local computer.
 * `kubectl` (pronounced _coob-control_): the Kubernetes command-line tool, used to run commands against Kubernetes clusters.
 
 ## Creating a simple ping application in Flask
@@ -488,6 +488,8 @@ Once Kind is installed, create a cluster with the following command (it may take
 kind create cluster
 ```
 
+>Note: you may delete a cluster with `kind delete cluster`
+
 Once the cluster is created, in order to access it with `kubectl` we need to provide the kind cluster context to it. You may do so with the following command:
 
 ```sh
@@ -523,26 +525,26 @@ Deployments in Kubernetes are defined with YAML files. Here's an example `deploy
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: ping-deployment
+  name: ping-deployment
 spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: ping
-    template:
-        metadata:
-            labels:
-                app: ping
-        spec:
-            containers:
-            -   name: ping-pod
-                image: ping:v1
-                resources:
-                    limits:
-                        memory: "128Mi"
-                        cpu: "500m"
-                ports:
-                -   containerPort: 9696
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ping
+  template:
+    metadata:
+      labels:
+        app: ping
+    spec:
+      containers:
+      - name: ping-pod
+        image: ping:v1
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 9696
 ```
 
 * The `.metadata.name` field contains the name of the deployment. In our example, `ping-deployment`.
@@ -597,14 +599,14 @@ Here's an example `service.yaml` file for our ping app:
 apiVersion: v1
 kind: Service
 metadata:
-    name: ping-service
+  name: ping-service
 spec:
-    type: LoadBalancer
-    selector:
-        app: ping
-    ports:
-    -   port: 80
-        targetPort: 9696
+  type: LoadBalancer
+  selector:
+    app: ping
+  ports:
+  - port: 80
+    targetPort: 9696
 ```
 
 * The service will be named `ping-service` as stated on the `.metadata.name` field.
@@ -642,26 +644,26 @@ Let's begin by creating a new `model-deployment.yaml` file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: tf-serving-model
+  name: tf-serving-model
 spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: tf-serving-model
-    template:
-        metadata:
-            labels:
-                app: tf-serving-model
-        spec:
-            containers:
-            -   name: tf-serving-model
-                image: zoomcamp-10-model:v1
-                resources:
-                    limits:
-                        memory: "512Mi"
-                        cpu: "1"
-                ports:
-                -   containerPort: 8500
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tf-serving-model
+  template:
+    metadata:
+      labels:
+        app: tf-serving-model
+    spec:
+      containers:
+      - name: tf-serving-model
+        image: zoomcamp-10-model:v1
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "1"
+        ports:
+        - containerPort: 8500
 ```
 
 * Note that we're using the same model image we created for `docker-compose`.
@@ -694,13 +696,13 @@ After we confirm that the deployment works, we need to create the service for th
 apiVersion: v1
 kind: Service
 metadata:
-    name: tf-serving-model
+  name: tf-serving-model
 spec:
-    selector:
-        app: tf-serving-model
-    ports:
-    -   port: 8500
-        targetPort: 8500
+  selector:
+    app: tf-serving-model
+  ports:
+  - port: 8500
+    targetPort: 8500
 ```
 * Note that we do not specify a service type. Therefore, this service will be the default internal service type, `ClusterIP`.
 
@@ -730,29 +732,29 @@ Here's the `gateway-deployment.yaml` file:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: gateway
+  name: gateway
 spec:
-    replicas: 1
-    selector:
-        matchLabels:
-            app: gateway
-    template:
-        metadata:
-            labels:
-                app: gateway
-        spec:
-            containers:
-            -   name: gateway
-                image: zoomcamp-10-gateway:v2
-                resources:
-                    limits:
-                        memory: "128Mi"
-                        cpu: "100m"
-                ports:
-                -   containerPort: 9696
-                env:
-                    -   name: TF_SERVING_HOST
-                        value: tf-serving-model.default.svc.cluster.local:8500
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: zoomcamp-10-gateway:v2
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 9696
+        env:
+          - name: TF_SERVING_HOST
+            value: tf-serving-model.default.svc.cluster.local:8500
 ```
 * Kubernetes makes use of ***namespaces*** to isolate group of resources within a cluster. The usage of namespaces falls beyond the scope of this course, but you can learn more about them [in this link](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/).
     * You can get available namespaces with `kubectl get namespace` . The default namespace name is `default` .
@@ -789,14 +791,14 @@ We will now create the `gateway-service.yaml` service file:
 apiVersion: v1
 kind: Service
 metadata:
-    name: gateway
+  name: gateway
 spec:
-    type: LoadBalancer
-    selector:
-        app: gateway
-    ports:
-    -   port: 80
-        targetPort: 9696
+  type: LoadBalancer
+  selector:
+    app: gateway
+  ports:
+  - port: 80
+    targetPort: 9696
 ```
 * Note that we add the `LoadBalancer` type to the service file.
 
@@ -819,6 +821,145 @@ Kubernetes's default load balancing does not work with gRPC. This means that whe
 
 [This article teaches you how to deal with this issue.](https://kubernetes.io/blog/2018/11/07/grpc-load-balancing-on-kubernetes-without-tears/)
 # Deploying to EKS
+
+**EKS** is AWS' Kubernetes service. We will now deploy our app to EKS.
+
+## Creating a cluster on EKS
+
+We can use the AWS website or `aws-cli` to create a cluster, but we will use instead `eksctl`.
+
+`eksctl` is a CLI tool for creating and managing clusters on EKS. You may learn more about it on its [official website](https://eksctl.io/). You can find download and install instructions [on the AWS EKS documentation pages](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html).
+
+`eksctl` can create clusters with default values. If you want to customize your cluster, you will need to provide a YAML configuration file.
+
+Here's an example `eks-config.yaml` file:
+
+```yaml
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: mlzoomcamp-eks
+  region: eu-west-1
+
+nodeGroups:
+  - name: ng-m5-xlarge
+    instanceType: m5.xlarge
+    desiredCapacity: 1
+```
+
+* Inside the `metadata` field we specify the `name` of our cluster and the AWS `region` in which we will be creating it.
+* A ***node group*** is a way to manage nodes that share similar specs. For example, our model may need nodes with GPUs but our gateway does not need them, so we could group all nodes with GPUs with a node group and all nodes without GPUs on another group.
+* The `nodeGroups` field contains a list of node groups. We will only use a single group. Actually we only need a single node, so `nodeGroups` will only have a single entry and `desiredCapacity` for the entry will be `1` (one node group with a single node inside).
+    * The `instanceType` is the [type of AWS EC2 instance](https://aws.amazon.com/ec2/instance-types/?nc1=h_ls) we will populate our node group with. In this example we will use instances of type M5 (general computing) extralarge.
+    * We node group must also have a name. Using the name `ng-m5-xlarge` is an easy way to remember the instance type.
+
+With our config file, we can now create the cluster (it may take several minutes to complete):
+
+```sh
+eksctl create cluster -f eks-config.yml
+```
+
+## Publishing the image to ECR
+
+For EKS to work we need to provide the Docker images we will use for our deployments.
+
+[We already explored how to upload a Docker image to ECR in Lesson 9](09_serverless.md#uploading-to-ecr-cli). Below is a shortened explanation to create a repository and upload the images:
+
+1. Create an ECR repository and login to it. We will use the name `mlzoomcamp-images` for it.
+1. Create the remote URIs for the model and gateway images.
+    * The URI prefix is the repo URI.
+    * The URI suffix will be the names of the images but substituting the colons with dashes.
+        * `zoomcamp-10-model:v1` becomes `zoomcamp-10-model-v1`
+        * `zoomcamp-10-gateway:v2` becomes `zoomcamp-10-gateway-v2`
+1. Tag the latest versions of your images with the remote URIs.
+1. Push the images to ECR.
+
+## Updating the deployment config files
+
+We now need to modify both `model-deployment-yaml` and `gateway-deployment-yaml` so that the container specs point to the images hosted on ECR.
+
+Simply edit the files and change the `.spec.template.spec.image` field to the images' remote URIs.
+
+## Applying the deployments and services to EKS
+
+Once `eksctl` finishes creating the cluster, `kubectl` should already be configured to work with it. You can test it with the following command:
+
+```sh
+kubectl get nodes
+```
+
+Once we've checked that `kubectl` displays the nodes (actually single node in this example) of our cluster, we can start applying and testing the deployments and services.
+
+Let's begin with the model.
+
+```sh
+kubectl apply -f model-deployment.yaml
+kubectl apply -f model-service.yaml
+kubectl get pod # check if the pod is active
+kubectl get service # check if service is working
+```
+
+We can also do port forwarding to test the service:
+
+```sh
+kubectl port-forward service/tf-serving-model 8500:8500
+# on another terminal, run the gateway script locally
+```
+
+Let's now continue with the gateway.
+
+```sh
+kubectl apply -f gateway-deployment.yaml
+kubectl apply -f gateway-service.yaml
+kubectl get pod # check if the pod is active
+kubectl get service # check if service is working
+```
+
+This time, the output of `kubectl get service` should show an external IP next to the gateway service.
+
+Let's do port forwarding to test it:
+
+```sh
+kubectl port-forward service/gateway 8080:80
+# on another terminal, run the test script locally
+```
+
+We can also telnet to the gateway service to test it. It's likely that you will not be able to telnet to it right after applying the service because the changes need to be propagated, but it should only take a few minutes. Do this after disabling port forwarding:
+
+```sh
+kubectl get service # copy the external url of the gateway service
+telnet <url-of-the-gateway-service>
+```
+
+Finally, use the test script. Update the test script to point to the external URL of the gateway service.
+
+> ***WARNING***: The gateway is open to everyone who has the URL. AWS will charge you for machine uptime and requests received. Leaving it as it is may result in unwanted charges. There are ways to limit access to the gateway but it falls outside the scope of this course.
+
+After you're done with the cluster, you may delete it to avoid additional charges.
+
+```sh
+eksctl delete cluster --name mlzoomcamp-eks
+```
+
+# Explore more
+
+Here are additional resources for learning more:
+
+* Kubernetes-related tools:
+    * [minikube](https://minikube.sigs.k8s.io/docs/start/) - Local Kubernetes, VM based.
+    * [k3s](https://k3s.io/) - Lightweight Kubernetes distribution for IoT and Edge computing; it supports ARM architectures as well as x86.
+    * [k3d](https://k3d.io/) - Like Kind but for k3s.
+    * [microk8s](https://microk8s.io/) - Another lightweight Kubernetes distribution.
+    * [EKS Anywhere](https://anywhere.eks.amazonaws.com/) - For running local Kubernetes clusters with optional support by AWS.
+    * [Rancher Desktop](https://rancherdesktop.io/) - Like Docker Desktop but for Kubernetes (uses k3s and containerd).
+    * [Docker Desktop](https://www.docker.com/products/docker-desktop) - Docker Desktop now includes Kubernetes support built in.
+    * [Lens](https://k8slens.dev/) - IDE for Kubernetes; like `kubectl` but with a GUI.
+* Managed Kubernetes
+    * There are many Kubernetes-as-a-Platform providers besides AWS, such as GCP, Azure, Digital Ocean, etc. Search for _Managed Kubernetes_.
+* [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
+    * Namespaces are handy for managing different apps or different teams inside a single cluster.
+
 
 > Previous: [Serverless Deep Learning](09_serverless.md)
 

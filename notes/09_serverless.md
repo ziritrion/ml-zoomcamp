@@ -243,10 +243,10 @@ You can install the AWS CLI tool with `pip install awscli`.
             * `$(aws ecr get-login --no-include-email)`
     1. `aws ecr get-login-password --region` _region_ `| docker login --username AWS --password-stdin` _aws_account_id_`.dkr.ecr.`_region_`.amazonaws.com`
         * Make sure to change `region` and `aws_account_id` with the info you got from step 1.
-1. Create the `REMOTE_URI` of your image by attaching a ***tag*** to the end of the repo URL preceded by a colon.
-    * Consider the example URL `123456.dkr.ecr.eu-west-1.amazonaws.com/my-registry`.
+1. Create the `REMOTE_URI` of your image by attaching a ***tag*** to the end of the repo URI preceded by a colon.
+    * Consider the example URI `123456.dkr.ecr.eu-west-1.amazonaws.com/my-registry`.
         * `123456` is the ***account***.
-        * `dkr.ecr` means that the URL belongs to an Amazon ECR private registry.
+        * `dkr.ecr` means that the URI belongs to an Amazon ECR private registry.
         * `eu-west-1` is the ***region***.
         * `amazonaws.com` is the top domain.
         * `/my-registry` is the directory of the registry we created in step 1.

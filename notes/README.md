@@ -13,6 +13,7 @@ Here are the notes I took from the course's videos.
     * [Extra: Office hours notes](07_misc.md)
 * [Session 8: Deep Learning](08_deep_learning.md)
 * [Session 9: Serverless Deep Learning](09_serverless.md)
+* [Session 10: Kubernetes and TensorFlow-Serving](10_kubernetes.md)
 * [Session 12: Capstone project](../12_project/README.md)
 
 Additionally, the following gists with cheatsheets are available.

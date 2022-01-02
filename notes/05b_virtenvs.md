@@ -115,17 +115,23 @@ Feel free to skip this section if you're already familiar with bash.
 
 On a brand new Ubuntu VM, Python is preinstalled but the command `python` won't work. You can use the command `python3` instead, but it get annoying fast, so let's fix this. Run the following command:
 
-`sudo apt install python-is-python3`
+```sh
+sudo apt install python-is-python3
+```
 
 You can now use `python` normally.
 
 We still can't install pipenv because Ubuntu does not have pip installed. We can install it with `apt`:
 
-`sudo apt install python3-pip`
+```sh
+sudo apt install python3-pip
+```
 
 We can now install pipenv:
 
-`pip install pipenv`
+```sh
+pip install pipenv
+```
 
 You should now be able to finish questions 1, 2, 3 and 4 of the Week 5 homework.
 
@@ -152,7 +158,10 @@ I recommend shutting down any running VM's you're not actively using before usin
 ## Docker Setup
 
 Install Docker with Homebrew:
-* `brew install --cask docker`
+
+```sh
+brew install --cask docker
+```
 
 This will install Docker Desktop, which is a convenient way to handle Docker images and containers, and it also includes command line commands.
 

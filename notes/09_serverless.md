@@ -2,7 +2,7 @@
 
 > [Back to Index](README.md)
 
-> Next: _(Coming soon)_
+> Next: [Kubernetes and TensorFlow-Serving](10_kubernetes.md) 
 
 # Intro to Serverless Deep Learning
 
@@ -30,13 +30,15 @@ After choosing the parameters, an IDE will appear on screen for writing your fun
 
 ## Sample Lambda function
 
-    import json
+```python
+import json
 
-    def lambda_handler(event, context):
-        print("parameters:", event)
-        url = event['url']
-        results = event['prediction'] + 1
-        return results
+def lambda_handler(event, context):
+    print("parameters:", event)
+    url = event['url']
+    results = event['prediction'] + 1
+    return results
+```
 
 * `event` contains all the necessary info to use inside our function. An ***event*** is a JSON-formatted document that the Lambda runtime converts to an object and passes it to our function. The object is usually of type `dict` (as in this example) but it can be `list`, `str`, `int` `float` or `None`.
 * `context` can contain methods and properties that provide information about the invocation, function and runtime environment. We will ignore this parameter for this course.
@@ -47,10 +49,12 @@ Once your code is finished, you must ***deploy*** it with the Deploy button at t
 
 A ***test event*** is a way to test our lambda function. Each function can have up to 10 test events. As mentioned before, an _event_ is a JSON document.
 
-    {
-        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "prediction": 69
-    }
+```json
+{
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "prediction": 69
+}
+```
 
 In this example, once we use the Test button, Lambda will send this JSON document to our function in the form of a Python `dict` with 2 keys: `url` and `prediction`, which are used in the example code above.
 
@@ -63,15 +67,16 @@ You can assign a name to a test event to save it for multiple uses.
 ## Convert a Keras model to TF-Lite
 
 Converting an existing Keras model to TF-Lite is pretty straightforward.
+```python
+import tensorflow as tf
 
-    import tensorflow as tf
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
 
-    tflite_model = converter.convert()
-
-    with open('model.tflite', 'wb') as f_out:
-        f_out.write(tflite_model)
+with open('model.tflite', 'wb') as f_out:
+    f_out.write(tflite_model)
+```
 
 You simply create a `converter` object trained on your model, then convert the model and store it to a file for later use.
 
@@ -79,10 +84,12 @@ You simply create a `converter` object trained on your model, then convert the m
 
 Using a TF-Lite model is slightly more involved than a simple Keras model, because Keras is a wrapper around TensorFlow which we don't have when dealing with TF-Lite directly.
 
-    import tensorflow.lite as tflite
+```python
+import tensorflow.lite as tflite
 
-    interpreter = tflite.Interpreter(model_path='model.tflite')
-    interpreter.allocate_tensors()
+interpreter = tflite.Interpreter(model_path='model.tflite')
+interpreter.allocate_tensors()
+```
 
 * We first create an `interpreter` object that loads the model from a file.
 * Then we load the weights of the model with the `allocate_tensors()` method. Keras loads the weights automatically but we must do so manually in TF-Lite.
@@ -91,16 +98,20 @@ Keras takes care of managing the inputs and outputs of the model for us, but TF-
 
 `interpreter.get_input_details()` will give us all the details about the model's input; `interpreter.get_output_details()` will do the same for the outputs. We're interested in accessing the ***indices*** of both the input and the output. In our example, the output of both functions returns a dictionary list with a single dictionary each because our model only has one input and one output, so we can access the `index` key on each and store it:
 
-    input_index = interpreter.get_input_details()[0]['index']
-    output_index = interpreter.get_output_details()[0]['index']
+```python
+input_index = interpreter.get_input_details()[0]['index']
+output_index = interpreter.get_output_details()[0]['index']
+```
 
 With our stored indices, we can now set the input, do inference and get our predictions:
 
-    interpreter.set_tensor(input_index, X)
+```python
+interpreter.set_tensor(input_index, X)
 
-    interpreter.invoke()
+interpreter.invoke()
 
-    preds = interpreter.get_tensor(output_index)
+preds = interpreter.get_tensor(output_index)
+```
 
 * `set_tensor()` takes the input we want to predict on and the input index and sets up the model for inference.
 * `invoke()` does the inference.
@@ -112,33 +123,36 @@ In the code above we're still loading the full TensorFlow library and we still n
 
 Regarding image preprocessing, so far we've seen code similar to this:
 
-    from tensorflow.keras.preprocessing.image import load_img
-    from tensorflow.keras.applications.xception import preprocess_input
-    
-    img = load_img('image.jpg', target_size=(299,299))
+```python
+from tensorflow.keras.preprocessing.image import load_img
+from tensorflow.keras.applications.xception import preprocess_input
 
-    x = np.array(img)
-    X = np.array([x])
+img = load_img('image.jpg', target_size=(299,299))
 
-    X = preprocess_input(X)
+x = np.array(img)
+X = np.array([x])
+
+X = preprocess_input(X)
+```
 
 We can replace `load_img()` with a similar function from `PIL` and we can reimplement `preprocess_input()` easily, thus getting rid of TF dependencies:
 
-    from PIL import Image
+```python
+from PIL import Image
 
-    with Image.open('image.jpg') as img:
-        img = img.resize((299, 299), Image.NEAREST)
-    
-    def preprocess_input(x):
-        x /= 127.5
-        x -= 1.
-        return x
+with Image.open('image.jpg') as img:
+    img = img.resize((299, 299), Image.NEAREST)
 
-    x = np.array(img, dtype='float32')
-    X = np.array([x])
+def preprocess_input(x):
+    x /= 127.5
+    x -= 1.
+    return x
 
-    X = preprocess_input(X)
+x = np.array(img, dtype='float32')
+X = np.array([x])
 
+X = preprocess_input(X)
+```
 
 * In `img.resize()`, `NEAREST` is the interpolation method we use for resizing, which also happens to be the default.
 * By looking at Keras' source code, we're able to see that `preprocess_input()` does a very simple transformation to our input which we can implement in a simple function in our code.
@@ -146,20 +160,26 @@ We can replace `load_img()` with a similar function from `PIL` and we can reimpl
 
 Alternatively, there's a library, `keras-image-helper`,  which contains preprocessors for a few convnets. Install it with `!pip install keras-image-helper`.
 
-    from keras_image_helper import create_preprocessor
+```python
+from keras_image_helper import create_preprocessor
 
-    preprocessor = create_preprocessor('xception', target_size(299, 299))
-    X = preprocessor.from_path('image.jpg')
+preprocessor = create_preprocessor('xception', target_size(299, 299))
+X = preprocessor.from_path('image.jpg')
+```
 
 ## Removing TF dependencies (runtime)
 
 In order to finally remove all TF dependencies, we must install `tflite_runtime`.
 
-`!pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime`
+```python
+!pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime
+```
 
 We can now import it as a drop-in replacement for TF:
 
-    import tflite_runtime.interpreter as tflite
+```python
+import tflite_runtime.interpreter as tflite
+```
 
 And use all the code from the previous sections.
 
@@ -177,15 +197,17 @@ We can use a publicly available Lambda Python base image from Amazon as our base
 
 ***WARNING:*** _Amazon Linux images are CentOS based; using code that has been tested on Debian-based distros may not work due to different available libraries and dependencies._
 
-    FROM public.ecr.aws/lambda/python:3.8
+```dockerfile
+FROM public.ecr.aws/lambda/python:3.8
 
-    RUN pip3 install keras_image_helper
-    RUN pip3 install https://github.com/alexeygrigorev/tflite-aws-lambda/raw/main/tflite/tflite_runtime-2.7.0-cp38-cp38-linux_x86_64.whl
+RUN pip3 install keras_image_helper
+RUN pip3 install https://github.com/alexeygrigorev/tflite-aws-lambda/raw/main/tflite/tflite_runtime-2.7.0-cp38-cp38-linux_x86_64.whl
 
-    COPY model.tflite .
-    COPY lambda_function.py .
+COPY model.tflite .
+COPY lambda_function.py .
 
-    CMD ["lambda_function.lambda_handler"]
+CMD ["lambda_function.lambda_handler"]
+```
 
 * `public.ecr.aws` is a URL that contains all publicly available Docker images from Amazon.
 * We do not use `pipenv` in this Dockerfile because it's difficult to make it work with TensorFlow.
@@ -221,10 +243,10 @@ You can install the AWS CLI tool with `pip install awscli`.
             * `$(aws ecr get-login --no-include-email)`
     1. `aws ecr get-login-password --region` _region_ `| docker login --username AWS --password-stdin` _aws_account_id_`.dkr.ecr.`_region_`.amazonaws.com`
         * Make sure to change `region` and `aws_account_id` with the info you got from step 1.
-1. Create the `REMOTE_URI` of your image by attaching a ***tag*** to the end of the repo URL preceded by a colon.
-    * Consider the example URL `123456.dkr.ecr.eu-west-1.amazonaws.com/my-registry`.
+1. Create the `REMOTE_URI` of your image by attaching a ***tag*** to the end of the repo URI preceded by a colon.
+    * Consider the example URI `123456.dkr.ecr.eu-west-1.amazonaws.com/my-registry`.
         * `123456` is the ***account***.
-        * `dkr.ecr` means that the URL belongs to an Amazon ECR private registry.
+        * `dkr.ecr` means that the URI belongs to an Amazon ECR private registry.
         * `eu-west-1` is the ***region***.
         * `amazonaws.com` is the top domain.
         * `/my-registry` is the directory of the registry we created in step 1.
@@ -273,4 +295,4 @@ Lambda charges you each time that your `lambda_handler` method is called; specif
 
 > [Back to Index](README.md)
 
-> Next: _(Coming soon)_
+> Next: [Kubernetes and TensorFlow-Serving](10_kubernetes.md) 

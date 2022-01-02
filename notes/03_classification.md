@@ -54,8 +54,10 @@ In Logistic Regression, the model `g(x_i)` will return a number between the valu
 * `g(x_i) = sigmoid( w_o + w^T · x_i )`
 * Logistic Regression is similar to Linear Regression except that we wrap the original formula inside a _sigmoid_ function. The sigmoid function always returns values between `0` and `1`.
 
-      def sigmoid(z):
-        return 1 / (1 + np.exp(-z))
+```python
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+```
 
 ## Accuracy
 

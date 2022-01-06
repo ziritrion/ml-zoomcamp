@@ -74,7 +74,7 @@ In this article, I'd like to focus on Reinforcement Learning. I promise it won't
 
 ## Understanding Reinforcement Learning
 
-So, we've seen that Reinforcement Learning (RL) problems have an **active agent** that generates its own data and performs decisions, there's also a "**teacher**" that tells the agent how well it's performing and we also know that the data that the agent generates is limited and we need lots of samples for just one prediction. But what exatly is RL?
+So, we've seen that Reinforcement Learning (RL) problems have an **active agent** that generates its own data and performs decisions, there's also a "**teacher**" that tells the agent how well it's performing and we also know that the data that the agent generates is limited and we need lots of samples for just one prediction. But what exactly is RL?
 
 A definition of RL could be "a computational approach to goal-directed learning from interaction that does not rely on expert supervision"  _[[source]](https://mitpress.mit.edu/books/reinforcement-learning-second-edition)_. [Wikipedia](https://www.wikiwand.com/en/Reinforcement_learning) says that RL is "an area of ML concerned with how intelligent agents ought to take actions in an environment in order to maximize the notion of cumulative reward".
 

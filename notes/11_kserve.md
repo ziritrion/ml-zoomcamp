@@ -14,8 +14,64 @@ KServe is structured around apps being designed with a ***two tier architecture*
 
 # Running KServe locally
 
-## Installing Kserve locally with Kind
+## Installing Kserve locally
+
+In order to run Kserve locally you will need to [install Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) as well as [install kubectl](https://kubernetes.io/docs/tasks/tools/). If you followed [lesson 10](10_kubernetes.md) you should already have both.
+
+You can install the Kserve Quickstart environment by [following the instructions in this link](https://kserve.github.io/website/0.7/get_started/). Make sure that a local Kind cluster is running before installing Kserve. The installation process will take several minutes.
+
+>IMPORTANT: Kserve is installed on top of a cluster. Whenever you create a new one you will have to install Kserve on top of it.
+
 ## Deploying an example model
+
+Once Kserve has been successfully installed, you may follow [these steps](https://kserve.github.io/website/0.7/get_started/first_isvc/) to install and test an example service.
+
+Here's the test `iris-example.yaml` file:
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "sklearn-iris"
+spec:
+  predictor:
+    sklearn:
+      storageUri: "gs://kfserving-samples/models/sklearn/iris"
+
+```
+
+* The `kind` field is `InferenceService`, a custom resource that Kserve provides.
+* `metadata.name` contains the name of the `InferenceService` (_`isvc`_ for short).
+* `spec` contains the actual content of the file:
+    * `predictor` is the Kserve component defined in the file, which will serve our model and output the predictions.
+    * `sklearn` is the runtime we use for this particular model. We specify it here in order to let Kserve know how to handle the model internally. A list of available runtimes is available [here](https://kserve.github.io/website/0.7/modelserving/v1beta1/serving_runtime/).
+    * `storageUri` links to the model. The example file links to an example model hosted on Google Cloud, thus the `gs` scheme (_Google Storage_).
+
+We can now apply the isvc resource:
+
+```sh
+kubectl apply -f iris-example.yaml
+```
+
+Let's now list all the available instances of `InferenceService`:
+
+```sh
+kubectl get inferenceservice
+# or alternatively,
+kubectl get isvc
+```
+
+If the isvc was successfully applied, it should display the state `READY = True` and display a public URL.
+
+The public URL always follows the following pattern:
+
+```sh
+http://${SERVICE_NAME}.${NAMESPACE}.${DOMAIN}
+```
+
+In our example, since we didn't specify a namespace, the URL will be `http://sklearn-iris.default.example.com`
+
+
 
 # Deploying a Scikit-Learn model with KServe
 

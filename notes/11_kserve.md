@@ -71,7 +71,82 @@ http://${SERVICE_NAME}.${NAMESPACE}.${DOMAIN}
 
 In our example, since we didn't specify a namespace, the URL will be `http://sklearn-iris.default.example.com`
 
+Kserve makes use of [Istio](https://istio.io/), a [_service mesh_](https://www.redhat.com/en/topics/microservices/what-is-a-service-mesh) that adds additional networking and monitoring capabilities to Kubernetes. When creating the InferenceService, Kserve (by means of Istio) created an _ingress service_, a public-facing load balancer for the app. You should see a `istio-ingressgateway` LoadBalancer service when typing the following command:
 
+```sh
+kubectl get service -n istio-system
+# The istio-ingressgateway should be listed along with additional services
+```
+
+We have to specify the namespace `istio-system` in order to list the ingress; thus the `-n istio-system` part of the command.
+
+The external IP will most likely be `<pending>` because we haven't configured Kubernetes to provide an external load balancer for the ingress gateway. However, we can make use of port forwarding to check whether the app is working or not:
+
+```sh
+kubectl port-forward -n istio-system service/istio-ingressgateway 8080:80
+```
+
+Now let's prepare a `iris-input.json` test input file:
+
+```json
+{
+  "instances": [
+    [6.8,  2.8,  4.8,  1.4],
+    [6.0,  3.4,  4.5,  1.6]
+  ]
+}
+```
+
+This request has 2 observations, so we expect 2 predictions.
+
+Since we do not have DNS, we will curl with the ingress gateway external IP using the HOST Header:
+
+```sh
+curl -v -H "Host: ${HOST}" ${URL} -d @./iris-input.json
+```
+* `${HOST}` is the `sklearn-iris.default.example.com` URL we got from using `kubectl get isvc`.
+    * We don't have access to `example.com` but Kserve still needs to know it because it needs to be able to know which InferenceService we want to send the request to (imagine we had several isvc's in our cluster; when the ingress gateway receives the request it needs to know where to send it!).
+* `${URL}` is the actual external URL of the InferenceService in our hosted Kubernetes which we need to send the predict request to. If you're running Kubernetes on localhost, it will have the following format:
+    * `http://localhost:8080/v1/models/${SERVICE_NAME}:predict`
+    * Remember that ${SERVICE_NAME} in our particular case is `sklearn-iris`.
+    * `localhost` is our `INGRESS_HOST` and `8080` is our `INGRESS_PORT`.
+    * `${SERVICE_NAME}` is `sklearn-iris`.
+    * In Kserve, the convention is to use a colon (`:`) to separate the path from the URL, which is why we have 
+* In `curl`, we can specify an HTTP header with the `-h` option. We use it to send the Host info for the Ingress Gateway to know which isvc needs to receive the user's request.
+* `-v` is the verbose option. You may omit it if you want.
+* `-d` specifies that the data we want to send is inside a file.
+
+You should receive something like this:
+
+```sh
+{"predictions": [1, 1]}
+```
+
+Alternatively, you can also use a python file to send a request instead of using `curl`:
+
+```python
+import requests
+
+service_name = 'sklearn-iris'
+host = f'{service_name}.default.example.com'
+actual_domain = 'http://localhost:8080'
+url = f'{actual_domain}/v1/models/{service_name}:predict'
+
+headers = {
+    'Host': host
+}
+
+request = {
+    "instances": [
+      [6.8,  2.8,  4.8,  1.4],
+      [6.0,  3.4,  4.5,  1.6]
+    ]
+  }
+
+response = requests.post(url, json=request, headers=headers)
+
+print(response.json())
+```
 
 # Deploying a Scikit-Learn model with KServe
 

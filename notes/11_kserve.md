@@ -45,7 +45,7 @@ spec:
 * `spec` contains the actual content of the file:
     * `predictor` is the Kserve component defined in the file, which will serve our model and output the predictions.
     * `sklearn` is the runtime we use for this particular model. We specify it here in order to let Kserve know how to handle the model internally. A list of available runtimes is available [here](https://kserve.github.io/website/0.7/modelserving/v1beta1/serving_runtime/).
-    * `storageUri` links to the model. The example file links to an example model hosted on Google Cloud, thus the `gs` scheme (_Google Storage_).
+    * `storageUri` links to the model (not a Docker image, but the actual model file!). The example file links to an example model hosted on Google Cloud, thus the `gs` scheme (_Google Storage_).
 
 We can now apply the isvc resource:
 
@@ -150,8 +150,90 @@ print(response.json())
 
 # Deploying a Scikit-Learn model with KServe
 
+In the previous block we already deployed an example Scikit-Learn model, but in this block we will train a new model and deploy it to explore the specifics.
+
 ## Training the churn model with a specific Scikit-Learn version
+
+We will make use of the [churn model we saw in lesson 5](https://github.com/alexeygrigorev/mlbookcamp-code/blob/master/course-zoomcamp/05-deployment/code/05-train-churn-model.ipynb).
+
+Kserve includes a _Scikit-Learn Server_ component that requires a specific Scikit-Learn library and Python versions. [In this folder of the Kserve repo](https://github.com/kserve/kserve/tree/master/python) you will find the [`sklearn.Dockerfile`](https://github.com/kserve/kserve/blob/master/python/sklearn.Dockerfile) that contains the Python version we need (Docker image `python:3.7-slim` at the time of writing these notes), and [in the folder for the `sklearnserver`implementation](https://github.com/kserve/kserve/tree/master/python/sklearnserver) you will wind the [`setup.py`](https://github.com/kserve/kserve/blob/master/python/sklearnserver/setup.py) that contains the dependencies we need, which at the time of writing are:
+* `kserve` 0.7.0
+* `scikit-learn` 0.20.3
+* `joblib` 0.13.0
+
+We will use Conda to create a virtual Python environment with these library dependencies. Pipenv is good for managing library versions but trickier for Python versions, so we will use Conda in this instance:
+
+```sh
+conda create -n py37-sklearn-0.20.3 python=3.7 scikit-learn==0.20.3 pandas joblib
+```
+* We don't bother specifiying library versions for the other dependencies because they're not important in this case.
+
+We will now train the churn model again within this new environment based on the [05-train-churn-model.ipynb](https://github.com/alexeygrigorev/mlbookcamp-code/blob/master/course-zoomcamp/05-deployment/code/05-train-churn-model.ipynb) Jupyter Notebook. We will export the notebook to a [`churn-train.py`](../11_kserve/churn/churn-train.py) file and make a few small changes:
+* No need to import `train_test_split` nor `KFold`.
+* We will read the data from a URL rather than a local file.
+* No need to split the dataset; we will train on the whole dataset but we will only use the numerical features `tenure` and `monthlycharges`, and the categorical `contract`.
+* We will use `joblib` rather than `pickle`. Import it and save the model with `joblib.dump()`.
+    * The sklearn-server needs a specific name for the model. Save it as `model.joblib`.
+*  The sklearn-server will only call the `predict()` method on our model but we need to fit a `DictVectorizer` as well as the model. We can use [sklearn's pipelines](07_misc.md#scikit-learn-pipelines) to fit both things within a single pipeline object that we can later dump as a file; that way sklearn-serve will call `predict()` on our pipeline and fit the vectorizer as well as the model.
+
+Activate the environment and run the script to save the model. You may now deactivate the environment since we won't be using it anymore.
+
 ## Deploying the churn prediction model with KServe
+
+We now need to create a `churn-service.yaml` InferenceService file:
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "churn"
+spec:
+  predictor:
+    sklearn:
+      storageUri: "http://172.31.13.90:8000/churn/model.joblib"
+```
+
+* We will call the isvc `churn` in `metadata.name`.
+* In `spec.predictor.sklearn.storageUri` we need to provide a link to our model. You can upload it to a GitHub repo for convenience. In this example we use Python's built in web server to locally host the model and put the URL there.
+    * In order to run Python's built-in web server, go to your model's directory on a terminal and run:
+    * `python -m http.server`
+    * The contents of the folder will be available on `http://localhost:8000`.
+    * Kserve won't be able to make use of the `localhost` name to retrieve the model, so you will need to substituite it with the IP address of your machine. You can find it with `ifconfig`/`ipconfig`.
+    * Find out more info about using storage URI's [in this link](https://github.com/kserve/kserve/tree/master/docs/samples/storage/uri).
+
+Deploy the isvc:
+
+```ssh
+kubectl apply -f churn-service.yaml
+```
+
+Now let's test if the isvc deployed successfully with our model:
+1. Get the pod name with `kubectl get pods` .
+1. Check the logs of the pod with `kubectl logs <pod_name>` . At the end of the logs the line `Registering model: churn` should appear.
+    * If the pod contains multiple containers, Kubernetes will complain and offer you a list of available containers. In this case, use `kubectl logs <pod_name> <container_name>` .
+1. Now login to the pod:
+    * `kubectl exec -it <pod_name> <container_name> --bash`
+1. Navigate to the model directory with `cd mnt/models/` and check the contents with `ls` . The `model.joblib` file should be there.
+1. Open a python interactive terminal with `python` and run the following lines:
+```python
+import joblib
+
+model = joblib.load('model.joblib')
+
+# get a few examples to run from the original dataset on a separate Notebook or whatever. You can also use these:
+X = = [{'contract': 'one_year', 'tenure': 34, 'monthlycharges': 56.95}]
+
+model.predict(X)
+# you should get a binary prediction
+
+model.predict_proba(X)
+# you should get a prediction probability
+
+exit()
+```
+Alternatively, you can also create a [`churn-test.py` file](../11_kserve/churn/churn-test.py) in a similar fashion to the script we created in the previous block as an alternative to `curl` and run it.
+
+In the next block we'll see how to use custom Python and Scikit-Learn versions.
 
 # Deploying custom Scikit-Learn images with KServe
 

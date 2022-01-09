@@ -287,6 +287,8 @@ docker run -it --rm \
 
 You can use the [`churn-test.py` file](../11_kserve/churn/churn-test.py) from before to test the container. The output of the prediction should now be 2 sets of probabilities.
 
+>Note: make sure that the test script is using the port 8081; otherwise it will not work. You van change it back to 8080 after the test because that's the port that Kserve uses.
+
 We now need to update the `churn-service.yaml` service definition file:
 
 ```yaml
@@ -310,6 +312,23 @@ spec:
 * Under `spec.predictor.sklearn` we add an `image` field that points to our custom Docker image.
   * In order for Kserve to find our image we would have to add it to the _configmap_ and then specify a `runtimeVersion` field in the spec; instead we simply publish a Docker image to Docker Hub and use the `repo/image:tag` URI under `image`.
 * We limit available resources in a similar way to pods in plain Kubernetes.
+
+We can now apply the isvc with the usual:
+
+```ssh
+kubectl apply -f churn-service.yaml
+```
+* Don't forget to enable the Python http server! Kserve needs to be able to find the `model.joblib` file.
+
+>Note: you can get rid of older isvc's with `kubectl delete isvc <isvc_name>`
+
+Once that the isvc has been deployed, make sure that port forwarding is enabled:
+
+```sh
+kubectl port-forward -n istio-system service/istio-ingressgateway 8080:80
+```
+
+And finally run the test script. You should receive the same probabilities as before.
 
 ## Running KServe service locally
 

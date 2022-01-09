@@ -198,3 +198,6 @@ cython_debug/
 # models
 09_serverless/*.h5
 09_serverless/*.tflite
+
+# lesson 11
+11_kserve/kserve-master/*

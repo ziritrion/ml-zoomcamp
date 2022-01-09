@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-scikit-learn = "==1.0"
+scikit-learn = "==1.0.1"
 joblib = "*"
 pandas = "*"
 

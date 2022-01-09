@@ -233,11 +233,84 @@ exit()
 ```
 Alternatively, you can also create a [`churn-test.py` file](../11_kserve/churn/churn-test.py) in a similar fashion to the script we created in the previous block as an alternative to `curl` and run it.
 
-In the next block we'll see how to use custom Python and Scikit-Learn versions.
-
 # Deploying custom Scikit-Learn images with KServe
 
+We will now deploy a custom Scikit-Learn image with a newer library version which will return prediction probabilities rather than hard predicitons.
+
 ## Customizing the Scikit-Learn image
+
+First, we need to download the [Kserve repository](https://github.com/kserve/kserve). You can download the zip file directly, you don't need to clone the repo (it should be about 35MB in size).
+
+Unzip the file and move the folder to your project folder. Add the folder to the `.gitignore` file so that it's not added to your repo by accident.
+
+Open the `kserve-master/python/sklearn.Dockerfile` and update the Docker image (first line of the Dockerfile) to `python:3.8-slim` . 
+
+Now open the `kserve-master/python/sklearnserver/setup.py` and update the scikit-learn version to `1.0.1`.
+
+Finally, open the `kserve-master/python/sklearnserver/sklearnserver/model.py` and modify it so that the `predict` method calls this line:
+
+```python
+result = self._model.predict_proba(inputs).tolist()
+```
+
+Let's build the Docker image. Go to the `kserve-master/python` folder and type the following command:
+
+```sh
+docker build -t kserve-sklearnserver:3.8-1.0 -f sklearn.Dockerfile .
+```
+
+* The name of the image and tag is up to you. This example uses the `kserve-sklearnserver` name along with the `3.8-1.0` tag (Python and scikit-learn versions respectively).
+* You must build it from the `kserve-master/python` directory because the Dockerfile needs to copy some files and the paths must be the expected ones.
+* Building this image may take a while.
+
+We now have to retrain our model with the updated version of scikit-learn. You will have to create a new environment. You can use the same method as before; in this example we will use `pipenv` to handle the dependencies starting from a 3.8 Python base. Run the following commands from the directory in which you have your churn files:
+
+```ssh
+pipenv install scikit-learn==1.0.1 joblib pandas
+
+pipenv run python churn-train.py
+```
+
+This should have created a new `model.joblib` file.  Let's now run the Docker image we created to test it:
+
+```sh
+docker run -it --rm \
+  -v "$(pwd)/model.joblib:/mnt/models/model.joblib" \
+  -p 8081:8080  \
+  kserve-sklearnserver:3.8-1.0 \
+  --model_dir=/mnt/models \
+  --model_name=churn
+```
+* The docker container must have access to the model; instead of rebuilding the image, we mount a volume so that we don't have to rebuild the image.
+* We map the port 8080 to 8081 in order to avoid conflicts with the local Kubernetes cluster.
+* This specific image requires 2 additional parameters: `model_dir` and `model_name`. Otherwise, the python script at the entrypoint will complain and the container will not run.
+
+You can use the [`churn-test.py` file](../11_kserve/churn/churn-test.py) from before to test the container. The output of the prediction should now be 2 sets of probabilities.
+
+We now need to update the `churn-service.yaml` service definition file:
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "churn"
+spec:
+  predictor:
+    sklearn:
+      image: agrigorev/sklearnserver:3.8-1.0-predict-proba
+      storageUri: "http://172.31.13.90:8000/churn/model.joblib"
+      resources:
+        requests:
+          cpu: 300m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+```
+* Under `spec.predictor.sklearn` we add an `image` field that points to our custom Docker image.
+  * In order for Kserve to find our image we would have to add it to the _configmap_ and then specify a `runtimeVersion` field in the spec; instead we simply publish a Docker image to Docker Hub and use the `repo/image:tag` URI under `image`.
+* We limit available resources in a similar way to pods in plain Kubernetes.
+
 ## Running KServe service locally
 
 # Serving TensorFlow models with KServe

@@ -6,7 +6,7 @@ A Kubernetes _Resource Definition_ is a YAML file that defines a _resource_ such
 
 In other words: KServe simplifies the deployment of Kubernetes apps by using shorter custom YAML files that take care of much of the work for us: with plain Kubernetes we needed 4 separate YAML files for our 2-component app, but with KServe we will only need 1. KServe works with many ML frameworks such as TensorFlow, PyTorch, XGboost, etc.
 
-KServe used to be part of a bigger toolkit called [Kubeflow](https://www.kubeflow.org/) but it's become an independent project. Kubeflow is a toolkit for managing the complete ML lifecycle from development to deployment on top of Kubernetes, but KServe only focuses on serving models.
+KServe used to be called _KFServing_ and be part of a bigger toolkit called [Kubeflow](https://www.kubeflow.org/) but it's become an independent project. Kubeflow is a toolkit for managing the complete ML lifecycle from development to deployment on top of Kubernetes, but KServe only focuses on serving models.
 
 KServe is structured around apps being designed with a ***two tier architecture***. In other words; apps served with KServe must have 2 main components: ***transformers*** and ***predictors***, which fulfill similar roles to our gateway and model server from the previous lesson.
 
@@ -289,6 +289,8 @@ You can use the [`churn-test.py` file](../11_kserve/churn/churn-test.py) from be
 
 >Note: make sure that the test script is using the port 8081; otherwise it will not work. You van change it back to 8080 after the test because that's the port that Kserve uses.
 
+## Running KServe service locally
+
 We now need to update the `churn-service.yaml` service definition file:
 
 ```yaml
@@ -330,13 +332,73 @@ kubectl port-forward -n istio-system service/istio-ingressgateway 8080:80
 
 And finally run the test script. You should receive the same probabilities as before.
 
-## Running KServe service locally
-
 # Serving TensorFlow models with KServe
 
+Deploying a TensorFlow isvc is similar to Scikit-Learn isvc's. We will use a Keras model from a previous lesson and convert it to TF.
+
 ## Converting the Keras model to saved_model format
+
+We already saw in the previous lesson [how to convert Keras models to TF](10_kubernetes.md#tensorflow-serving). For brevity, we will describe the steps broadly:
+
+1. Download a TF model by running this command:
+    * `wget https://github.com/alexeygrigorev/mlbookcamp-code/releases/download/chapter7-model/xception_v4_large_08_0.894.h5`
+1. Download or copy the `convert.py` script [from this link](https://github.com/alexeygrigorev/mlbookcamp-code/blob/master/chapter-09-kubernetes/convert.py) and save it to the same folder of the model.
+1. Run the `convert.py` script.
+
+A new `clothing-model` folder should appear.
+
+>Note: the reason we're placing the contents of the model in that folder is because the TF-serving image expects it like this. See [the previous lesson](10_kubernetes.md#running-a-container-with-a-tf-serving-model) for details.
+
 ## Deploying the model
+
+Kserve's TensorFlow InferenceService makes use of TF-serving, so we need to prepare the model accordingly.
+
+1. Go inside the `clothing-model` folder, create a new folder with the name `1` (the number one) and move all the other contents to this new folder.
+1. Zip the contents of the `clothing-model` folder (in other words, the `1` folder) and name it `clothing-model.zip` .
+1. Use `python -m http.server` to serve the contents of your work folder and copy the link to `clothes/clothing-model/clothing-model.zip`
+
+Let's create a new `clothes-service.yaml` isvc file. Its contents will be very similar to the yaml file [from the previous section](#running-kserve-service-locally).
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "clothes"
+spec:
+  predictor:
+    tensorflow:
+      storageUri: "http://172.31.13.90:8000/clothes/clothing-model/clothing-model.zip"
+      resources:
+        requests:
+          cpu: 500m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 512Mi
+```
+* Inside `spec.predictor`, we exchange `sklearn` for `tensorflow`.
+* We're using the default TF isvc image, so there is no need to specify a custom one.
+* Remember that the URL for the model will be specific to you. Paste the link to the model zip file and change the IP address accordingly using `ifconfig`/`ipconfig` to find  out your IP address.
+>Note: this file is for creating an InferenceService with HTTP. If you want to use gRPC, check the [instructions on the Kserve repo](https://github.com/kserve/kserve/tree/master/docs/samples/v1beta1/tensorflow#create-the-inferenceservice-with-grpc).
+
+We can now deploy the isvc with the usual command:
+
+```ssh
+kubectl apply -f clothing-service.yaml
+```
+
 ## Preparing the input
+
+If you recall from the previous lesson, in order to send requests to a TF-serving model we first need to [preprocess the input with a gateway](10_kubernetes.md#testing-the-tf-serving-container-with-jupyter-notebook-gateway). We need to create a similar script in order to test the Kserve TF isvc because we don't have a _transformer_ yet (we'll cover transformers in the next block).
+
+[Here's a Jupyter Notebook with the necessary code for testing](../11_kserve/clothes/test.ipynb).
+* You will need a Python environment in which you've installed `keras_image_helper`.
+   * You can install it with `pip install keras_image_helper`
+* We only need to use the `keras_image_helper` library, so there is no need to import anything else.
+    * We don't use gRPC in this deployment, only regular HTTP.
+* We copy the `request` format from [the code we used in this block to send requests to the sklearn isvc](11_kserve.md#deploying-an-example-model) (scroll to the end of the block). 
+
+Once that your test notebook is working correctly, you may [convert it to a python script](../11_kserve/clothes/test.py).
 
 # KServe transformers
 

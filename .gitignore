@@ -201,3 +201,5 @@ cython_debug/
 
 # lesson 11
 11_kserve/kserve-master/*
+11_kserve/clothes/*.h5
+11_kserve/clothes/clothing-model/*

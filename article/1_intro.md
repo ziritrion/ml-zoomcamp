@@ -39,7 +39,7 @@ There are many different ML algorithms depending on the characteristics of the p
 * How many samples you use for training
 * How much info you get out of each sample
 
-This results in 3 different kinds of ML according to his criteria:
+This results in the 3 different "branches" of ML that most people recognize:
 
 * ***Reinforcement Learning***: the input samples are scarce and we get little info out of each sample.
     * E.g. teaching a robot to pick up an object. The data is limited to what we can detect around the robot and we need lots of tries in order to "predict" a simple action such as "crouch" or "open/close hand".
@@ -84,6 +84,8 @@ Let's suppose we want to teach a robot how to move through an obstacle course. T
 
 On any given state, the robot/agent can take an ***action***, such as stepping forward, jumping, standing up or even keeping still. The action will _change the state_ to a new one, which in turn will offer a new set of actions for the agent to take.
 
+[![Watch the video](https://img.youtube.com/vi/hx_bgoTF7bs/hqdefault.jpg)](https://www.youtube.com/watch?v=hx_bgoTF7bs)
+
 Here's where the "teacher" part of RL comes in: after taking an action, the agent will receive both a new state and a ***reward***. The reward informs the agent about how good the previous action was. By defining a set of rewards based on the possible combinations of states and actions, we can teach the robot/agent to handle the obstacle course:
 * Did the robot step forward and not fall down? Have a one point reward!
 * Did the robot reach the goal? Excellent, 100 points!
@@ -117,6 +119,9 @@ Formally, RL is formulated through a [_Markov Decision Process_](https://www.wik
     * <code>𝑃<sub>𝑎</sub>(𝑠, 𝑠') = 𝑃𝑟(𝑠<sub>𝑡+1</sub> = 𝑠' | 𝑠<sub>𝑡</sub> = 𝑠 , 𝑎<sub>𝑡</sub> = 𝑎)</code> is the probability that action <code>𝑎</code> in state <code>𝑠</code> at time <code>𝑡</code> will lead to state <code>𝑠'</code> at time <code>𝑡+1</code>.
 * <code>𝑅<sub>𝑎</sub>(𝑠, 𝑠')</code> is the _inmediate reward_ (or expected inmediate reward) received after transitioning from state <code>𝑠</code> to state <code>𝑠'</code> due to action <code>𝑎</code>.
 
+![Markov chain](https://miro.medium.com/max/2400/1*Uh11rrUKKsHLLRmmv0ss2w.jpeg)
+>This image is an example of a Markov Chain. MDP's are extensions of Markov chains. Source: https://sanchit2843.medium.com/markov-chains-and-markov-decision-process-e91cda7fa8f2
+
 An interesting property of MDPs is that they must satisfy the [Markov property](https://www.wikiwand.com/en/Markov_property): The future is _conditionally independent_ of the past. This is a property of _stochastic systems_: a random event does not depend on its past. But in RL we depend on the ***history*** (the sequence of observations, actions and rewards) to train our agent, so how do we handle the history if we cannot rely on the past for a MDP to be valid?
 
 The solution lies in how we define the state. If we understand the state as a _function of the history_, we can codify all the relevant information from the history in the current state. Once we have that, we can throw away the complete history because the current state is a _sufficient statistic of the future_. The state is now a Markov state and using it in a MDP will satisfy the Markov property. Mathematically:
@@ -125,6 +130,8 @@ The solution lies in how we define the state. If we understand the state as a _f
     * The probability of state <code>𝑠<sub>𝑡+1</sub></code> given <code>𝑠<sub>𝑡</sub></code> equals the probability if <code>𝑠<sub>𝑡+1</sub></code> given all previous states.
 
 An important distinction to make is that ***observation does not equal state***. Imagine a 3D camera navigating a labyrinth: the camera only sees a portion of the labyrinth, so it's impossible for the camera/agent to obtain the full _environment state_, which is a separate entity of the _agent state_. This is called a ***Partially Observable Environment***, and MDP that handle them are called ***Partially Observable Markov Decision Process*** (POMDP); we deal with them by constructing our own _state representation_ by different means (keeping track of the whole history, filling in the gaps with inference, etc.) so that our constructed state representation still maintains the Markov property.
+
+![3D labyrinth](https://thumbs.gfycat.com/PlumpGiddyBasenji-size_restricted.gif)
 
 ## RL agent components
 
@@ -147,7 +154,7 @@ Let our environment be a maze. The maze is a square grid with a start and a goal
 ![maze environment](images/01_01.png)
 >Source: https://www.davidsilver.uk/wp-content/uploads/2020/03/intro_RL.pdf
 
-A _policy_ <code>𝜋(𝑠)</code> would map a state `𝑠` to an action `𝑎`. The iamge below displays what the policy function would look like for each possible state.
+A _policy_ <code>𝜋(𝑠)</code> would map a state `𝑠` to an action `𝑎`. The image below displays what the policy function would look like for each possible state.
 
 ![maze policy](images/01_02.png)
 >Source: https://www.davidsilver.uk/wp-content/uploads/2020/03/intro_RL.pdf
@@ -173,7 +180,7 @@ Keep in mind the following caveats:
 * A complex environment may have so many possible states that makes using a policy or a value function on all of them unfeasible.
 * Actions can be discreet (like the ones we've seen so far) or continuos (for example, "increasing speed up to X amount" rather than simply "step forward").
 
-## RL "flavors"
+## RL "flavors" (taxonomy)
 
 Based on the 3 components we've seen, we can categorize RL agents in different "flavors":
 
@@ -205,5 +212,13 @@ Based on the 3 components we've seen, we can categorize RL agents in different "
         * If <code>𝜋 ≠ 𝜇</code>, then we're doing **off policy learning**.
             * Off policy learning is _unstable_ - variance is higher than on policy learning which means that convergence is more difficult.
             * Off policy learning is _data efficient_ - we're able to explore more than we would otherwise do with on policy learning, which could lead to learning better strategies.
+* And so much more...!
 
-When discussing a RL algorithm, we classify it according to these "flavors". 
+![RL algorithm taxonomy](https://spinningup.openai.com/en/latest/_images/rl_algorithms_9_15.svg)
+>A simplified taxonomy of RL algorithms. Source: https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html
+
+When discussing a RL algorithm, we classify it according to these "flavors".
+
+# RL first steps
+
+Confused enough? Let's see if we can make sense of what we've seen so far by solving a simple problem with RL.

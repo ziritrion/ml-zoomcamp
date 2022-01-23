@@ -84,6 +84,8 @@ Let's suppose we want to teach a robot how to move through an obstacle course. T
 
 On any given state, the robot/agent can take an ***action***, such as stepping forward, jumping, standing up or even keeping still. The action will _change the state_ to a new one, which in turn will offer a new set of actions for the agent to take.
 
+_Click on the image below to watch an example of what I just said._
+
 [![Watch the video](https://img.youtube.com/vi/hx_bgoTF7bs/hqdefault.jpg)](https://www.youtube.com/watch?v=hx_bgoTF7bs)
 
 Here's where the "teacher" part of RL comes in: after taking an action, the agent will receive both a new state and a ***reward***. The reward informs the agent about how good the previous action was. By defining a set of rewards based on the possible combinations of states and actions, we can teach the robot/agent to handle the obstacle course:
@@ -112,12 +114,12 @@ RL has a few differences from other ML paradigms:
 
 This is the part where it starts to get a little more complicated.
 
-Formally, RL is formulated through a [_Markov Decision Process_](https://www.wikiwand.com/en/Markov_decision_process) (MDP). A MDP is a tuple <code>(𝑆, 𝐴, 𝑃<sub>𝑎</sub>, 𝑅<sub>𝑎</sub>)</code>:
+Formally, RL is formulated through a [_Markov Decision Process_](https://www.wikiwand.com/en/Markov_decision_process) (MDP). A MDP is a tuple <code>(𝑆 , 𝐴 , 𝑃<sub>𝑎</sub> , 𝑅<sub>𝑎</sub>)</code>:
 * <code>𝑆</code> is the _state space_, the set of all possible environment and agent states. A single state is represented with lowercase <code>𝑠</code>.
 * <code>𝐴</code> is the _action space_, the set of all actions that the agent can do. If the set of actions is only available from a specific state, we use <code>𝐴<sub>𝑠</sub></code>. A single action is represented with lowercase <code>𝑎</code>.
 * <code>𝑃<sub>𝑎</sub></code> is the _probabilty density_ of the next state given the current state and action. More formally:
-    * <code>𝑃<sub>𝑎</sub>(𝑠, 𝑠') = 𝑃𝑟(𝑠<sub>𝑡+1</sub> = 𝑠' | 𝑠<sub>𝑡</sub> = 𝑠 , 𝑎<sub>𝑡</sub> = 𝑎)</code> is the probability that action <code>𝑎</code> in state <code>𝑠</code> at time <code>𝑡</code> will lead to state <code>𝑠'</code> at time <code>𝑡+1</code>.
-* <code>𝑅<sub>𝑎</sub>(𝑠, 𝑠')</code> is the _inmediate reward_ (or expected inmediate reward) received after transitioning from state <code>𝑠</code> to state <code>𝑠'</code> due to action <code>𝑎</code>.
+    * <code>𝑃<sub>𝑎</sub>(𝑠 , 𝑠') = 𝑃𝑟(𝑠<sub>𝑡+1</sub> = 𝑠' | 𝑠<sub>𝑡</sub> = 𝑠 , 𝑎<sub>𝑡</sub> = 𝑎)</code> is the probability that action <code>𝑎</code> in state <code>𝑠</code> at time <code>𝑡</code> will lead to state <code>𝑠'</code> at time <code>𝑡+1</code>.
+* <code>𝑅<sub>𝑎</sub>(𝑠 , 𝑠')</code> is the _inmediate reward_ (or expected inmediate reward) received after transitioning from state <code>𝑠</code> to state <code>𝑠'</code> due to action <code>𝑎</code>.
 
 ![Markov chain](https://miro.medium.com/max/2400/1*Uh11rrUKKsHLLRmmv0ss2w.jpeg)
 >This image is an example of a Markov Chain. MDP's are extensions of Markov chains. Source: https://sanchit2843.medium.com/markov-chains-and-markov-decision-process-e91cda7fa8f2
@@ -126,7 +128,7 @@ An interesting property of MDPs is that they must satisfy the [Markov property](
 
 The solution lies in how we define the state. If we understand the state as a _function of the history_, we can codify all the relevant information from the history in the current state. Once we have that, we can throw away the complete history because the current state is a _sufficient statistic of the future_. The state is now a Markov state and using it in a MDP will satisfy the Markov property. Mathematically:
 * A state <code>𝑠<sub>𝑡</sub></code> is Markov **if and only if**:
-    * <code>𝑃(𝑠<sub>𝑡+1</sub> | 𝑠<sub>𝑡</sub>) = 𝑃(𝑠<sub>𝑡+1</sub> | 𝑠<sub>1</sub>, ..., 𝑠<sub>𝑡</sub>)</code>
+    * <code>𝑃(𝑠<sub>𝑡+1</sub> | 𝑠<sub>𝑡</sub>) = 𝑃(𝑠<sub>𝑡+1</sub> | 𝑠<sub>1</sub> , ... , 𝑠<sub>𝑡</sub>)</code>
     * The probability of state <code>𝑠<sub>𝑡+1</sub></code> given <code>𝑠<sub>𝑡</sub></code> equals the probability if <code>𝑠<sub>𝑡+1</sub></code> given all previous states.
 
 An important distinction to make is that ***observation does not equal state***. Imagine a 3D camera navigating a labyrinth: the camera only sees a portion of the labyrinth, so it's impossible for the camera/agent to obtain the full _environment state_, which is a separate entity of the _agent state_. This is called a ***Partially Observable Environment***, and MDP that handle them are called ***Partially Observable Markov Decision Process*** (POMDP); we deal with them by constructing our own _state representation_ by different means (keeping track of the whole history, filling in the gaps with inference, etc.) so that our constructed state representation still maintains the Markov property.
@@ -139,13 +141,13 @@ An RL agent may include one or more of these 3 components:
 
 * **Policy**: the agent's behaviour function.
     * A _policy function_ <code>𝜋</code> maps states to actions.
-* **Value function**: it tells us how good is each state and/or action.
+* **Value function**: it tells us how good each state and/or action is.
     * A _value function_ predicts future rewards based on the current state and/or action, thus allowing us to evaluate how good or bad the current state/action is.
     * It can also be used to select between actions!
 * **Model**: the agent's representation of the environment.
     * The _model_ predicts what the environment will do next.
     * It can predict both the next state and/or the next (inmediate) reward.
-    * Do not confuse the RL model with the Supervised Learning model! In RL, the term "model" is only used for modeling the environment; what we're actually training in RL is the agent!
+    * Do not confuse the RL model with the Supervised Learning model! In RL, the term "model" is used for modeling the environment; what we're actually training in RL is the agent!
 
 Let's use an example environment to understand the components a little better:
 
@@ -178,7 +180,7 @@ Keep in mind the following caveats:
 
 * An environment may be difficult or impossible to model accurately if it's complex enough.
 * A complex environment may have so many possible states that makes using a policy or a value function on all of them unfeasible.
-* Actions can be discreet (like the ones we've seen so far) or continuos (for example, "increasing speed up to X amount" rather than simply "step forward").
+* Actions can be discreet (like the ones we've seen so far) or continuous (for example, "increasing speed up to X amount" rather than simply "step forward").
 
 ## RL "flavors" (taxonomy)
 
@@ -200,7 +202,7 @@ Based on the 3 components we've seen, we can categorize RL agents in different "
     * If not, then the agent is ***stochastic***. Stochastic policies calculate probabilities of actions and choose one depending on different factors.
 * What about ***on/off policy learning***?
     * In RL, we first collect data and then we learn from that data.
-    * When an agent follows a policy to collect data (choosing an action and observing a new state), it does so in a stable manner. But if we _change the agent_ by updating the policy, then the previously collected data is not useful anymore!
+    * When an agent follows a policy to collect data (choosing an action and observing a new state), it does so in a stable manner. But if we _change the agent_ by updating the policy, then the previously collected data does not represent the actions of the agent anymore!
     * Sometimes we want to provide useful pre-defined data for the agent to learn!
     * We can define 2 different policies:
         * A _target policy_ <code>𝜋</code> that we want our agent to learn.
@@ -222,3 +224,7 @@ When discussing a RL algorithm, we classify it according to these "flavors".
 # RL first steps
 
 Confused enough? Let's see if we can make sense of what we've seen so far by solving a simple problem with RL.
+
+Click here to open a Jupyter notebook in Google Colab.
+
+Otherwise, [click here to return to the index](README.md).

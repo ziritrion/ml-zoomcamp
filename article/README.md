@@ -6,8 +6,8 @@ Because of its size, it has been divided in 2 parts:
 
 1. [Part 1: this document explains the main theory behind Reinforcement Learning.](1_intro.md)
 1. Part 2: this Jupyter notebook contains an example of solving a RL task using Deep Q-Learning.
+    * [Run the notebook in Google Colab (recommended)](http://colab.research.google.com/github/ziritrion/ml-zoomcamp/blob/main/article/2_dql.ipynb)
     * [Link to the notebook in GitHub.](2_dql.ipynb)
-    * [Run the notebook in Google Colab (recommended)](colab.research.google.com/github/)
 
 Credits and references:
 * Theory:

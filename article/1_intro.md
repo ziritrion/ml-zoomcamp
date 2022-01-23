@@ -225,6 +225,6 @@ When discussing a RL algorithm, we classify it according to these "flavors".
 
 Confused enough? Let's see if we can make sense of what we've seen so far by solving a simple problem with RL.
 
-Click here to open a Jupyter notebook in Google Colab.
+[Click here to open a Jupyter notebook in Google Colab](http://colab.research.google.com/github/ziritrion/ml-zoomcamp/blob/main/article/2_dql.ipynb).
 
 Otherwise, [click here to return to the index](README.md).

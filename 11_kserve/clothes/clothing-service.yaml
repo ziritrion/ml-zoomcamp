@@ -1,0 +1,15 @@
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "clothes"
+spec:
+  predictor:
+    tensorflow:
+      storageUri: "http://192.168.1.22:8000/clothes/clothing-model/clothing-model.zip"
+      resources:
+        requests:
+          cpu: 500m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 512Mi

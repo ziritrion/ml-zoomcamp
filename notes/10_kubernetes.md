@@ -12,6 +12,8 @@
 
 In this lesson we will use Kubernetes along with ***TensorFlow Serving***, a component of the TensorFlow Extended (TFX) family of technologies used to deploy models in production environments.
 
+>Note: in [lesson 9 - serverless](09_serverless.md) we used tflite for serving models in AWS Lambda. Tensorflow Serving is the actual tool intended for deploying models; we only used tflite with Lambda because Tensorflow-Serving is too big for it.
+
 In the image above you can see the main architecture we will create during the lesson. The _gateway_ will be created with Flask and will take care of downloading images, resizing them, preparing the input for the models and post-process the model outputs. The _model server_ will be used for inference only and will receive for input an image in the form of a numpy array and will return a prediction using `gRPC` to the gateway.
 
 The gateway only uses CPU computing and needs less resources than the model server, which makes use of GPU computing. By decoupling these 2 components, we can run them in separate containers and in different numbers (for example, 5 gateway containers and 2 model server containers, as shown in the image), allowing us to optimize resources and lower deployment costs.
@@ -68,7 +70,7 @@ In the signature above we can see that our example model has 1 input called `inp
 
 ## Running a container with a tf-serving model
 
-TensorFlow-Serving has an official Docker image ready for deployment. By using ***volumes*** (folders in the host machine that can be mounted to containers in a manner similar to external storage) we can deploy our model in a volume and attach it to a container without the need to rebuild a new image, thus reducing the size of the Docker image and therefore reducing costs.
+TensorFlow-Serving has an official Docker image ready for deployment. By using ***volumes*** (folders in the host machine that can be mounted to containers in a manner similar to external storage) we can deploy our model in a volume and attach it to a container without the need to rebuild a new image. This is very convenient for developing as it saves a lot of time not having to rebuild images constantly just for trying out different models.
 
 We can run the official tf-serving Docker image with our model mounted in a volume with the following command:
 
@@ -199,7 +201,7 @@ The [GitHub page for `tensorflow-protobuf`](https://github.com/alexeygrigorev/te
 
 Since the additional code is wordy, it would be convenient to define the `np_to_protobuf()` method on a separate `proto.py` script and then import it to the gateway app with `from proto import np_to_protobuf`.
 
-# Running everything locally with `docker-compose`
+# Running everything locally with docker-compose
 
 Now that we've created our gateway, it's time to dockerize it and run both the model and gateway concurrently locally.
 
@@ -207,7 +209,7 @@ Now that we've created our gateway, it's time to dockerize it and run both the m
 
 ### Model image
 
-[The `docker run` command we used for the tf-serving container](#running-a-container-with-a-tf-serving-model) is very long. If the volume and environment variable won't change often, we can create a new Dockerfile specifying them for easier deployment.
+[The `docker run` command we used for the tf-serving container](#running-a-container-with-a-tf-serving-model) is very long. If the volume and environment variable won't change often, we can create a new Dockerfile specifying them for easier deployment (managing volumes with tools such as Kubernetes is complex, so copying the model to the image is more convenient).
 
 ```dockerfile
 FROM tensorflow/serving:2.7.0
@@ -302,6 +304,8 @@ In order to fix this issue, both containers must be ***in the same network***. P
 ![container network](images/10_03.png)
 
 We can create this network with the `docker` command; however, it's a very tedious process. We can use the `docker-compose` command instead, which is used to run multi-container Docker applications and simplifies connecting different containers between them.
+
+`docker-compose` is great for developing and testing multi-container apps locally. We will later see other tools such as Kubernetes for deploying multi-container apps.
 
 Instructions to install `docker-compose` [are available here](https://docs.docker.com/compose/install/).
 
@@ -823,6 +827,8 @@ Kubernetes's default load balancing does not work with gRPC. This means that whe
 # Deploying to EKS
 
 **EKS** is AWS' Kubernetes service. We will now deploy our app to EKS.
+
+>Note: in lesson 5 we covered AWS Elastic Beanstalk (EBS) for deployment. For simpler single-container apps, EBS is simpler to use than EKS.
 
 ## Creating a cluster on EKS
 

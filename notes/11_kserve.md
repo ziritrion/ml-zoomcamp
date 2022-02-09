@@ -403,9 +403,199 @@ Once that your test notebook is working correctly, you may [convert it to a pyth
 # KServe transformers
 
 ## Why do we need transformers
-## Creating a service for pre and post processing
-## Using existing transformers
 
+In an actual deployment we cannot expect our end users to use a script to preprocess the input images.
+
+A ***transformer*** is a Kserve component that handles input preprocessing as well as output formatting before delivering it to the end user.
+
+This section borrows heavily from [Kserve's official docs](https://github.com/kserve/kserve/tree/master/docs/samples/v1beta1/transformer/torchserve_image_transformer).
+
+## Creating a service for pre and post processing
+
+Just like with predictors, transformers are declared in the YAML file of the service. We will also need a script that handles the actual pre and post processing and we will dockerize it.
+
+### Script
+
+In order to create a Kserve transformer we need to create a class that derives from the base `kserve.Model` class and then overwrite the `preprocess` and `postprocess` methods.
+
+Let's create a `image_transformer.py`:
+
+```python
+import kserve
+from typing import List, Dict
+
+class ImageTransformer(kserve.Model):
+  def __init__(self, name: str, predictor_host: str):
+    super().__init__(name)
+    # URL for the model predict function
+    self.predictor_host = predictor_host
+    # ...
+
+  def preprocess(self, inputs: Dict) -> Dict:
+    result = []
+    # ...
+    return {'instances': result}
+
+  def postprocess(self, inputs: Dict) -> Dict:
+    result = []
+    # ...
+    return {'instances': result}
+```
+
+* We make use of [type hints](https://www.infoworld.com/article/3630372/get-started-with-python-type-hints.html) to declare the types of the method parameters and return values. This isn't actually necessary and does not change the results of the code but it can be useful in complex code bases because it provides metadata to the IDE when developing.
+* The `self.predictor_host` is needed for the transformer in order to find the inference service. It's a URL that points to the service. Kserve handles the connection between the 2 components.
+
+We will now adapt the contents of the [previous test.py script](../11_kserve/clothes/test.py) into `image_transformer.py`:
+
+* Move the definition of the `classes` and `preprocessor` objects inside the `ImageTransformer` class constructor.
+* Create an auxiliary `prepare_input()` method that receives an image URL, preprocesses it and returns the vectorized preprocessed image as a list:
+    ```python
+    def prepare_input(self, url: str) -> List:
+      X = self.preprocessor.from_url(url)
+      return X[0].tolist()
+    ```
+    * Note that we need to return a Python list! `X[0]` is a NumPy array, which is not serializable and will not work here!
+* The `preprocess` method should loop throught the input images Dict, call the `prepare_input()` method on each image and append the result to the `result` list.
+* The `postprocess()` method should zip each element in the `response` dict with its corresponding class and append it to the `result` list.
+
+This transformer script will be dockerized and run with Kserve. The way Kserve expects transformers to work is by having the script served with a webserver, similar to what we did with Flask in previous lessons; however, Kserve already provides a webserver (Tornado) so there is no need to import additional libraries.
+
+We will just add a `main` block at the end of the script:
+```python
+if __name__ == '__main__':
+  import argparse
+
+  # argument parsing
+  parser = argparse.ArgumentParser(parents=[kserve.model_server.parser])
+  parser.add_argument("--predictor_host", help="The URL for the model predict function", required=True)
+  parser.add_argument("--model_name", help="The name of the model", required=True)
+
+  args, _ = parser.parse_known_args()
+
+  model_name = args.model_name
+  host = args.predictor_host
+
+  # transformer instancing
+  tranformer = ImageTransformer(model_name, predictor_host=host)
+
+  # webserver
+  server = kserve.ModelServer()
+  server.start(models=[tranformer])
+```
+* We use the `argparse` library to parse the arguments that the transformer will receive: the `predictor_host` URL and the `model_name`.
+* We instantiate our transformer.
+* We create a `kserve.ModelServer()` object and call its `start()` method passing the transformer instance as a parameter.
+
+You can see a finalized script [in this link](../11_kserve/image_transformer/image_transformer.py).
+>Note: the linked script uses the old `kserve.KFModel` and `kserve.KFServer()` calls but behaves identically to the new calls.
+
+### Script local test
+
+We now need to test the script. We will use pipenv to handle dependencies. With Kserve running and serving the model, run the following:
+```sh
+pipenv install kserve==0.7.0 keras-image-helper
+
+pipenv shell
+
+python image_transformer.py --predictor_host=localhost:8080 --model_name="clothes" --http_port=8081
+```
+* Even though we didn't declare the `http_port` argument in our script, it's one of the many default arguments provided by `kserve.ModelServer()`. You can find out which arguments are available by running the script without any arguments and reading the console output.
+* Since istio is already running on port 8080, we need to run the transformer on a separate port. In this example we're using port 8081.
+
+In order to test it we need to forward the port of the predictor pod because we're running the transformer from outside Kserve and istio won't be able to reroute our request.
+
+Run the following:
+```sh
+# fin out the name of the predictor pod
+kubectl get pod
+
+# port forwarding
+kubectl port-forward <pod_name> 8080:8080
+```
+
+We can now test the script. You can modify the original [`test.py`](../11_kserve/clothes/test.py) by getting rid of all image preprocessing and modifying the `request` dictionary so that the `instances` list contains another dictionary of URLs. Here's a finalized [`test-transformer.py` script](../11_kserve/image_transformer/test-transformer.py). Make sure that the domain you're targetting is `localhost:8081`.
+
+Run the [`test-transformer.py` script](../11_kserve/image_transformer/test-transformer.py). You should receive predictions for 2 image URLs.
+
+>Note: remember to remove the port forwarding and run `deactivate` on the terminal in which you run the transformer after you're finished testing.
+
+### Docker image
+
+We can now dockerize our script. The Dockerfile will be very similar to all other Dockerfiles we've created so far:
+
+```dockerfile
+FROM python:3.8.12-slim
+
+RUN pip install pipenv
+
+WORKDIR /app
+
+COPY ["Pipfile", "Pipfile.lock", "./"]
+
+RUN pipenv install --system --deploy
+
+COPY "image_tranformer.py" .
+
+ENTRYPOINT ["python", "image_tranformer.py"]
+```
+
+Build it as usual with `docker build`.
+
+### YAML file
+
+We now need to declare our transformer service within the spec of our isvc.
+
+```yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: "clothes"
+spec:
+  transformer:
+    containers:
+      - image: "<transformer_name>:<tag>"
+        name: clothes-transformer
+        resources:
+          requests:
+            cpu: 300m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+  predictor:
+    tensorflow:
+      storageUri: "http://172.31.13.90:8000/clothes/clothing-model/clothing-model.zip"
+      resources:
+        requests:
+          cpu: 500m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 512Mi
+```
+* We add the `transformer` block right under `spec` and we specify the Docker image, the service name and optionally the resources that the transformer may take in the Kubernetes cluster.
+
+However, the YAML file above ***will not work***. Kserve does not know how to load local images. We will have to push it to Docker Hub or any other repository and then use the image URI in the `image` field.
+
+Here's a modified [`clothes-service.yaml` file](../11_kserve/image_transformer/clothes-service.yaml) that you can use that makes use of a preloaded transformer images. The YAML file includes a few additional environment variables because it can be use to transform images for multiple models; read more about it [in this link](https://github.com/alexeygrigorev/kfserving-keras-transformer).
+
+### Apply the isvc
+
+You are now ready to deploy the isvc. Run the following:
+
+```sh
+kubectl apply -f clothes-service.yaml
+```
+
+### Test the deployment
+
+Forward the istio port:
+
+```sh
+kubectl port-forward -n istio-system service/istio-ingressgateway 8080:80
+```
+
+Run the [`test-transformer.py` script](../11_kserve/image_transformer/test-transformer.py) and make sure that you're pointing to `localhost:8080`. You should receive predictions.
 # Deploying with KServe and EKS
 
 ## Creating an EKS cluster

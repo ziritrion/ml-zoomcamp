@@ -1,6 +1,6 @@
 # ML Zoomcamp Article: Introduction to Reinforcement Learning
 
-This folder contains the "article" (lol) for the DataTalks.Club Machine Learning Zoomcamp.
+This folder contains the article for the DataTalks.Club Machine Learning Zoomcamp.
 
 Because of its size, it has been divided in 2 parts:
 
